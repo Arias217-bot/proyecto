@@ -1,0 +1,24 @@
+# Carpeta del entorno virtual
+venv/
+.env
+
+# Archivos de caché de Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Configuración de VS Code
+.vscode/
+
+# Dependencias instaladas
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Archivos de logs y bases de datos locales
+*.log
+*.sqlite3
+db.sqlite3
+
+# Configuración de entorno
+.env
+*.env

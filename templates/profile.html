@@ -1,0 +1,67 @@
+{% extends './base.html' %}
+{% block title %} Perfil de Usuario {% endblock %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.1/css/all.css" integrity="sha384-xxzQGERXS00kBmZW/6qxqJPyxW3UR0BPsL4c8ILaIWXva5kFi7TxkIIaMiKtqV1Q" crossorigin="anonymous">
+{% endblock %}
+
+{% block body %}
+<section id="profile-section" style="background-color: #ffffff;">
+
+    <div id="profile-container" class="row mt-4">
+        <!-- Contenedor de imagen y datos principales -->
+        <div id="profile-card" class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <img id="profile-img" src="{{ url_for('static', filename='images/roosevelt.jpg') }}" alt="avatar" class="rounded-circle img-fluid" style="width: 150px;">
+                    <h5 class="my-3">{{ usuario.nombre }}</h5>
+                    <p class="text-muted mb-4">{{ usuario.direccion }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor de información detallada -->
+        <div id="profile-info" class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    {% for label, value in [('Documento', usuario.documento), ('Email', usuario.email), ('Fecha de Nacimiento', usuario.fecha_nacimiento), ('Sexo', usuario.sexo), ('Teléfono', usuario.telefono)] %}
+                        <div class="row profile-info-item">
+                            <div class="col-sm-3">
+                                <p class="mb-0">{{ label }}</p>
+                            </div>
+                            <div class="col-sm-9">
+                                <p class="text-muted mb-0">{{ value }}</p>
+                            </div>
+                        </div>
+                        <hr>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rectángulo de Experiencia -->
+    <div id="experience-section" class="row mt-4">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="mb-3">Experiencia del Usuario</h5>
+                    <p class="text-muted">{{ usuario.experiencia }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</section>
+
+<script>
+    function logout() {
+        alert("Cerrando sesión...");
+    }
+</script>
+
+{% endblock %}
