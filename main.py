@@ -120,7 +120,7 @@ def main():
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
-                print("No se puede recibir el frame. Saliendo...")
+                print("Saliendo...")
                 break
 
             image, results, angulo_codo, angulo_rodilla, angulo_tronco, manos_sobre_frente = procesar_frame(frame, pose, deteccion_func)
