@@ -1,100 +1,67 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+import math
 
 from evaluaciones.evaluar_estabilidad import evaluar_estabilidad
 from evaluaciones.evaluar_posicion import evaluar_posicion
 from evaluaciones.evaluar_movimiento import evaluar_movimiento
 from evaluaciones.evaluar_contacto import evaluar_contacto
 from evaluaciones.evaluar_seguimiento import evaluar_seguimiento
+from mediapipe.python.solutions.pose import PoseLandmark
+
 
 # Inicializar Mediapipe
 mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils
 pose = mp_pose.Pose()
 
-def calcular_angulo(a, b, c):
-    """
-    Calcula el ángulo entre tres puntos.
-    
-    Args:
-        a, b, c: Coordenadas de los puntos.
-    
-    Returns:
-        float: Ángulo en grados.
-    """
-    a = np.array(a)  # Primer punto
-    b = np.array(b)  # Punto medio
-    c = np.array(c)  # Último punto
-    
-    # Calcular los vectores entre los puntos
-    ba = a - b
-    bc = c - b
-
-    # Calcular el ángulo entre los vectores
-    coseno_angulo = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
-    angulo = np.arccos(coseno_angulo)  # Ángulo en radianes
-    return np.degrees(angulo)  # Convertir a grados
+def calcular_angulo(p1, p2, p3):
+    """Calcula el ángulo entre tres puntos."""
+    try:
+        angulo = math.degrees(
+            math.atan2(p3.y - p2.y, p3.x - p2.x) -
+            math.atan2(p1.y - p2.y, p1.x - p2.x)
+        )
+        return abs(angulo) if angulo >= 0 else abs(angulo + 360)
+    except Exception as e:
+        print(f"Error al calcular el ángulo: {e}")
+        return None
 
 def evaluar_saque(landmarks):
     """
-    Evalúa la postura del saque basado en los puntos de referencia del cuerpo.
-    
+    Evalúa un saque basado en los landmarks proporcionados.
     Args:
-        landmarks: Lista de puntos de referencia del cuerpo.
-    
+        landmarks (list): Lista de landmarks detectados por MediaPipe.
     Returns:
-        tuple: Ángulos y evaluación de la postura del saque.
+        dict: Resultados de la evaluación con mensajes y datos relevantes.
     """
-    # Extraer coordenadas necesarias
-    hombro_izq = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER].y]
-    codo_izq = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW].y]
-    muñeca_izq = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST].y]
-    
-    cadera_izq = [landmarks[mp_pose.PoseLandmark.LEFT_HIP].x, landmarks[mp_pose.PoseLandmark.LEFT_HIP].y]
-    rodilla_izq = [landmarks[mp_pose.PoseLandmark.LEFT_KNEE].x, landmarks[mp_pose.PoseLandmark.LEFT_KNEE].y]
-    tobillo_izq = [landmarks[mp_pose.PoseLandmark.LEFT_ANKLE].x, landmarks[mp_pose.PoseLandmark.LEFT_ANKLE].y]
-    
-    ojo_izq = [landmarks[mp_pose.PoseLandmark.LEFT_EYE].x, landmarks[mp_pose.PoseLandmark.LEFT_EYE].y]
-    ojo_der = [landmarks[mp_pose.PoseLandmark.RIGHT_EYE].x, landmarks[mp_pose.PoseLandmark.RIGHT_EYE].y]
-    ojos = [(ojo_izq[0] + ojo_der[0]) / 2, (ojo_izq[1] + ojo_der[1]) / 2]  # Punto medio entre ambos ojos
-    
-    manos_sobre_frente = muñeca_izq[1] < ojos[1]  # Verificar si las manos están sobre la frente
-    
-    # Calcular los ángulos
-    angulo_codo = calcular_angulo(hombro_izq, codo_izq, muñeca_izq)
-    angulo_rodilla = calcular_angulo(cadera_izq, rodilla_izq, tobillo_izq)
-    
-    # Coordenadas adicionales para evaluar la estabilidad del tronco
-    cadera_derecha = [landmarks[mp_pose.PoseLandmark.RIGHT_HIP].x, landmarks[mp_pose.PoseLandmark.RIGHT_HIP].y]
-    hombro_derecho = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER].x, landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER].y]
+    try:
+        # Validar que landmarks sea una lista
+        if not isinstance(landmarks, list):
+            raise ValueError("Se esperaba una lista de landmarks, pero se recibió otro tipo de dato.")
 
-    # Calcular el ángulo del tronco (cadera-hombro-ojos)
-    angulo_tronco = calcular_angulo(cadera_derecha, hombro_derecho, ojos)
+        # Acceder a landmarks individuales
+        hombro = landmarks[PoseLandmark.RIGHT_SHOULDER.value]
+        codo = landmarks[PoseLandmark.RIGHT_ELBOW.value]
+        muñeca = landmarks[PoseLandmark.RIGHT_WRIST.value]
 
-    # Evaluación de la postura
-    resultados = []
-    if angulo_codo < 90:
-        resultados.append('❌ Codo muy cerrado')
-    elif angulo_codo > 120:
-        resultados.append('❌ Codo muy abierto')
-    else:
-        resultados.append('✅ Codo correcto')
+        # Calcular ángulo del codo
+        angulo_codo = calcular_angulo(hombro, codo, muñeca)
+        if angulo_codo is None:
+            raise ValueError("No se pudo calcular el ángulo del codo.")
 
-    if manos_sobre_frente:
-        resultados.append('✅ Manos sobre la frente')
-    else:
-        resultados.append('❌ Subir manos sobre la frente')
+        # Evaluar si el saque es válido
+        saque_valido = angulo_codo > 90
 
-    if 100 <= angulo_rodilla <= 140:
-        resultados.append('✅ Rodilla correcta')
-    else:
-        resultados.append('❌ Ajustar rodilla')
+        # Mensajes descriptivos
+        mensajes = [
+            f"Ángulo del codo: {angulo_codo:.2f}°",
+            f"Saque {'válido' if saque_valido else 'no válido'}"
+        ]
 
-    if 75 <= angulo_tronco <= 105:
-        resultados.append('✅ Tronco estable')
-    else:
-        resultados.append('❌ Ajustar estabilidad del tronco')
+        return {"mensajes": mensajes, "datos": [angulo_codo, saque_valido]}
 
-    evaluacion = "\n".join(resultados)
-    return angulo_codo, angulo_rodilla, angulo_tronco, manos_sobre_frente, evaluacion
+    except Exception as e:
+        print(f"Error en evaluar_saque: {e}")
+        return {"mensajes": ["❌ Error en la evaluación del saque"], "datos": []}

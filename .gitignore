@@ -1,21 +1,40 @@
 # Ignorar todo por defecto
 *
 
-# No ignorar estos archivos y carpetas
+# No ignorar estos archivos y carpetas principales
 !main.py
 !requirements.txt
 !README.md
+!.gitignore
+
+# No ignorar las carpetas principales
 !detecciones/
 !evaluaciones/
 !fonts/
-!.gitignore
+!Salidas/
 
 # Ignorar el contenido dentro de las carpetas, pero no las carpetas en sí
 detecciones/*
 evaluaciones/*
 fonts/*
+Salidas/*
 
-# No ignorar el contenido dentro de las carpetas especificadas
-!detecciones/**
-!evaluaciones/**
-!fonts/**
+# No ignorar archivos específicos dentro de las carpetas
+!detecciones/**/*.py
+!evaluaciones/**/*.py
+!fonts/**/*.ttf
+
+# Ignorar archivos temporales, de sistema y de desarrollo
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.tmp
+*.bak
+*.swp
+*.DS_Store
+Thumbs.db
+
+# Ignorar salidas generadas
+Salidas/*.csv
+Salidas/*.avi

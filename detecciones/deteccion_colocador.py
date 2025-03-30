@@ -2,11 +2,14 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import csv
+import math
+from mediapipe.python.solutions.pose import PoseLandmark
 
-# Crear archivo CSV y escribir encabezados
-with open('analisis_postura.csv', mode='w', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerow(['Frame', 'Angulo Codo', 'Angulo Rodilla', 'Angulo Tronco', 'Manos Sobre Frente'])
+
+# Inicializar el archivo CSV
+csv_file = open('analisis_postura.csv', mode='w', newline='')
+csv_writer = csv.writer(csv_file)
+csv_writer.writerow(['Frame', 'Angulo Codo', 'Angulo Rodilla', 'Angulo Tronco', 'Manos Sobre Frente'])
 
 # Inicializar Mediapipe
 mp_pose = mp.solutions.pose
@@ -16,91 +19,99 @@ pose = mp_pose.Pose()
 def calcular_angulo(a, b, c):
     """
     Calcula el ángulo entre tres puntos.
-    
     Args:
         a, b, c: Coordenadas de los puntos.
-    
     Returns:
-        float: Ángulo en grados.
+        float: Ángulo en grados o None si no se puede calcular.
     """
-    a = np.array(a)  # Primer punto
-    b = np.array(b)  # Punto medio
-    c = np.array(c)  # Último punto
-    
-    # Calcular los vectores entre los puntos
-    ba = a - b
-    bc = c - b
+    try:
+        a = [a.x, a.y]  # Primer punto
+        b = [b.x, b.y]  # Punto medio
+        c = [c.x, c.y]  # Último punto
 
-    # Calcular el ángulo entre los vectores
-    coseno_angulo = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
-    angulo = np.arccos(coseno_angulo)  # Ángulo en radianes
-    return np.degrees(angulo)  # Convertir a grados
+        # Calcular los vectores entre los puntos
+        ba = [a[0] - b[0], a[1] - b[1]]
+        bc = [c[0] - b[0], c[1] - b[1]]
+
+        # Verificar que los vectores no sean nulos
+        if math.sqrt(ba[0]**2 + ba[1]**2) == 0 or math.sqrt(bc[0]**2 + bc[1]**2) == 0:
+            return None  # Retorna None si no se puede calcular el ángulo
+
+        # Calcular el ángulo entre los vectores
+        coseno_angulo = (ba[0] * bc[0] + ba[1] * bc[1]) / (math.sqrt(ba[0]**2 + ba[1]**2) * math.sqrt(bc[0]**2 + bc[1]**2))
+        angulo = math.acos(coseno_angulo)  # Ángulo en radianes
+        return math.degrees(angulo)  # Convertir a grados
+    except AttributeError:
+        print("❌ Error: Uno de los landmarks no tiene las propiedades necesarias.")
+        return None
+
+def verificar_landmark(landmark):
+    """
+    Verifica si un landmark es confiable basado en su visibilidad.
+    Args:
+        landmark: Landmark de Mediapipe.
+    Returns:
+        bool: True si el landmark es confiable, False en caso contrario.
+    """
+    return hasattr(landmark, 'visibility') and landmark.visibility >= 0.5
 
 def detectar_colocador(landmarks):
     """
     Detecta la postura del colocador basado en los puntos de referencia del cuerpo.
-    
     Args:
         landmarks: Lista de puntos de referencia del cuerpo.
-    
     Returns:
-        tuple: Ángulos y evaluación de la postura del colocador.
+        dict: Resultados de la detección con mensajes y datos relevantes.
     """
-    # Extraer coordenadas necesarias
-    hombro_izq = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER].y]
-    codo_izq = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW].y]
-    muñeca_izq = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST].y]
-    
-    cadera_izq = [landmarks[mp_pose.PoseLandmark.LEFT_HIP].x, landmarks[mp_pose.PoseLandmark.LEFT_HIP].y]
-    rodilla_izq = [landmarks[mp_pose.PoseLandmark.LEFT_KNEE].x, landmarks[mp_pose.PoseLandmark.LEFT_KNEE].y]
-    tobillo_izq = [landmarks[mp_pose.PoseLandmark.LEFT_ANKLE].x, landmarks[mp_pose.PoseLandmark.LEFT_ANKLE].y]
-    
-    ojo_izq = [landmarks[mp_pose.PoseLandmark.LEFT_EYE].x, landmarks[mp_pose.PoseLandmark.LEFT_EYE].y]
-    ojo_der = [landmarks[mp_pose.PoseLandmark.RIGHT_EYE].x, landmarks[mp_pose.PoseLandmark.RIGHT_EYE].y]
-    ojos = [(ojo_izq[0] + ojo_der[0]) / 2, (ojo_izq[1] + ojo_der[1]) / 2]  # Punto medio entre ambos ojos
-    
-    manos_sobre_frente = muñeca_izq[1] < ojos[1]  # Verificar si las manos están sobre la frente
-    
-    # Calcular los ángulos
-    angulo_codo = calcular_angulo(hombro_izq, codo_izq, muñeca_izq)
-    angulo_rodilla = calcular_angulo(cadera_izq, rodilla_izq, tobillo_izq)
-    
-    # Coordenadas adicionales para evaluar la estabilidad del tronco
-    cadera_derecha = [landmarks[mp_pose.PoseLandmark.RIGHT_HIP].x, landmarks[mp_pose.PoseLandmark.RIGHT_HIP].y]
-    hombro_derecho = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER].x, landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER].y]
+    try:
+        # Acceder a landmarks individuales (lado izquierdo)
+        hombro_izq = landmarks[PoseLandmark.LEFT_SHOULDER.value]
+        codo_izq = landmarks[PoseLandmark.LEFT_ELBOW.value]
+        muñeca_izq = landmarks[PoseLandmark.LEFT_WRIST.value]
+        cadera_izq = landmarks[PoseLandmark.LEFT_HIP.value]
+        rodilla_izq = landmarks[PoseLandmark.LEFT_KNEE.value]
+        tobillo_izq = landmarks[PoseLandmark.LEFT_ANKLE.value]
 
-    # Calcular el ángulo del tronco (cadera-hombro-ojos)
-    angulo_tronco = calcular_angulo(cadera_derecha, hombro_derecho, ojos)
+        # Calcular ángulos (lado izquierdo)
+        angulo_codo_izq = calcular_angulo(hombro_izq, codo_izq, muñeca_izq)
+        angulo_rodilla_izq = calcular_angulo(cadera_izq, rodilla_izq, tobillo_izq)
 
-    # Evaluación de la postura
-    resultados = []
-    if angulo_codo < 90:
-        resultados.append('❌ Codo muy cerrado')
-    elif angulo_codo > 120:
-        resultados.append('❌ Codo muy abierto')
-    else:
-        resultados.append('✅ Codo correcto')
+        # Verificar si los ángulos son válidos
+        if angulo_codo_izq is None or angulo_rodilla_izq is None:
+            return {"mensajes": ["❌ No se pudieron calcular algunos ángulos"], "datos": []}
 
-    if manos_sobre_frente:
-        resultados.append('✅ Manos sobre la frente')
-    else:
-        resultados.append('❌ Subir manos sobre la frente')
+        # Evaluación de la postura
+        resultados = []
 
-    if 100 <= angulo_rodilla <= 140:
-        resultados.append('✅ Rodilla correcta')
-    else:
-        resultados.append('❌ Ajustar rodilla')
+        # Evaluar codo izquierdo
+        if angulo_codo_izq < 90:
+            resultados.append('❌ Codo izquierdo muy cerrado')
+        elif angulo_codo_izq > 120:
+            resultados.append('❌ Codo izquierdo muy abierto')
+        else:
+            resultados.append('✅ Codo izquierdo correcto')
 
-    if 75 <= angulo_tronco <= 105:
-        resultados.append('✅ Tronco estable')
-    else:
-        resultados.append('❌ Ajustar estabilidad del tronco')
+        # Evaluar rodilla izquierda
+        if 100 <= angulo_rodilla_izq <= 140:
+            resultados.append('✅ Rodilla izquierda correcta')
+        else:
+            resultados.append('❌ Ajustar rodilla izquierda')
 
-    evaluacion = "\n".join(resultados)
-    return angulo_codo, angulo_rodilla, angulo_tronco, manos_sobre_frente, evaluacion
+        evaluacion = "\n".join(resultados)
+        return {
+            "mensajes": [evaluacion],
+            "datos": [angulo_codo_izq, angulo_rodilla_izq, None, None]
+        }
+
+    except Exception as e:
+        print(f"Error en detectar_colocador: {e}")
+        return {"mensajes": ["❌ Error en la detección del colocador"], "datos": []}
 
 # Cargar el video
 cap = cv2.VideoCapture('HowToTimeAVolleyball.mp4')  # Cambia esto por la ruta del video
+
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 # Inicializar grabación de video
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
@@ -123,22 +134,28 @@ while cap.isOpened():
         landmarks = results.pose_landmarks.landmark
         
         # Detectar colocador y obtener resultados
-        angulo_codo, angulo_rodilla, angulo_tronco, manos_sobre_frente, evaluacion = detectar_colocador(landmarks)
-
-        # Guardar datos en el archivo CSV
-        with open('analisis_postura.csv', mode='a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow([cap.get(cv2.CAP_PROP_POS_FRAMES),  # Número de cuadro
-                             angulo_codo, 
-                             angulo_rodilla, 
-                             angulo_tronco, 
-                             manos_sobre_frente])
+        resultado = detectar_colocador(results.pose_landmarks.landmark)
+        if resultado["datos"]:
+            angulo_codo, angulo_rodilla, angulo_tronco, manos_sobre_frente = resultado["datos"]
+            evaluacion = resultado["mensajes"][0]  # Obtener el mensaje de evaluación
+            # Guardar datos en el archivo CSV
+            with open('analisis_postura.csv', mode='a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([cap.get(cv2.CAP_PROP_POS_FRAMES),  # Número de cuadro
+                                 angulo_codo, 
+                                 angulo_rodilla, 
+                                 angulo_tronco, 
+                                 manos_sobre_frente])
+        else:
+            print("❌ No se pudieron guardar los datos debido a errores en la detección.")
+            evaluacion = "❌ Error en la detección del colocador"  # Mensaje de error predeterminado
 
         # Dibujar los resultados en la pantalla
         y0, dy = 50, 30
         for i, line in enumerate(evaluacion.split('\n')):
             y = y0 + i * dy
-            cv2.putText(frame, line, (50, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0) if '✅' in line else (0, 0, 255), 2)
+            color = (0, 255, 0) if '✅' in line else (0, 255, 255) if '⚠️' in line else (0, 0, 255)
+            cv2.putText(frame, line, (50, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
     
     # Mostrar el video con la detección y los ángulos
     cv2.imshow('Evaluación de Postura - Colocador', frame)
@@ -153,3 +170,6 @@ while cap.isOpened():
 cap.release()
 out.release()
 cv2.destroyAllWindows()
+
+# Al final del programa
+csv_file.close()
