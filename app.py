@@ -21,8 +21,10 @@ init_db(app)
 
 # Registro de rutas
 for bp in blueprints:
-    app.register_blueprint(bp, url_prefix='/usuarios')
-    app.register_blueprint(bp, url_prefix='/equipos')
+    if bp.name == "usuario_bp":
+        app.register_blueprint(bp, url_prefix='/usuarios')
+    elif bp.name == "equipo_bp":
+        app.register_blueprint(bp, url_prefix='/equipos')
 
 # Rutas
 @app.route('/login', methods=['GET', 'POST'])

@@ -1,5 +1,5 @@
 from config import db
-from models.entidad_base import EntidadBase
+from models.entidad_base import EntidadBase # Para heredar de EntidadBase
 
 class Equipo(EntidadBase):
     __tablename__ = 'equipo'
