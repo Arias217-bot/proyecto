@@ -1,7 +1,8 @@
 # models/usuario.py
 from config import db
+from models.entidad_base import EntidadBase
 
-class Usuario(db.Model):
+class Usuario(EntidadBase):
     __tablename__ = 'usuario'
 
     documento = db.Column(db.String(20), primary_key=True)
@@ -13,15 +14,3 @@ class Usuario(db.Model):
     direccion = db.Column(db.String(255))
     email = db.Column(db.String(100), unique=True)
     experiencia = db.Column(db.Text)
-
-    def to_dict(self):
-        return {
-            "documento": self.documento,
-            "nombre": self.nombre,
-            "fecha_nacimiento": self.fecha_nacimiento,
-            "sexo": self.sexo,
-            "telefono": self.telefono,
-            "direccion": self.direccion,
-            "email": self.email,
-            "experiencia": self.experiencia
-        }
