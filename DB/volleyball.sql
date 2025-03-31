@@ -525,7 +525,8 @@ CREATE TABLE public.usuario (
     telefono character varying(15),
     direccion character varying(255),
     email character varying(100),
-    experiencia text
+    experiencia text,
+    foto character varying(255),
 );
 
 

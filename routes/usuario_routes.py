@@ -1,4 +1,4 @@
-# routes/routes.py
+# routes/usuario_routes.py
 from flask import Blueprint, jsonify, request, render_template
 from werkzeug.security import generate_password_hash
 from models.usuario import Usuario

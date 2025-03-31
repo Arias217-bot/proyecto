@@ -1,3 +1,4 @@
+# routes/entidad_routes.py
 from flask import Blueprint, jsonify, request
 from config import db
 

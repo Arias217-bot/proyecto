@@ -2,10 +2,28 @@
 {% block title %} Detalles del Equipo {% endblock %}
 
 {% block body %}
-<div class="container mt-4">
-    <h2 class="text-center">{{ equipo.nombre }}</h2>
-    <p><strong>Descripción:</strong> {{ equipo.descripcion }}</p>
+<div class="container mt-4" style="background-color: #f8841c; padding: 20px; border-radius: 10px;">
+    <h2 class="text-center" style="color: black; font-weight: bold;">{{ equipo.nombre }}</h2>
+    
+    <table class="table mt-4 text-center" style="border-radius: 10px; overflow: hidden;">
+        <thead style="background-color: black; color: white;">
+            <tr>
+                <th scope="col">Descripción</th>
+                <th scope="col">Categoría Edad</th>
+                <th scope="col">Categoría Sexo</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="background-color: white; color: black;">
+                <td>{{ equipo.descripcion }}</td>
+                <td>{{ equipo.categoria_edad }}</td>
+                <td>{{ equipo.categoria_sexo }}</td>
+            </tr>
+        </tbody>
+    </table>
 
-    <a href="{{ url_for('perfil_equipos', documento=documento) }}" class="btn btn-secondary mt-3">Volver</a>
+    <div class="text-center">
+        <a href="{{ url_for('perfil_equipos', documento=documento) }}" class="btn btn-secondary mt-3">Volver</a>
+    </div>
 </div>
 {% endblock %}

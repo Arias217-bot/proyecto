@@ -1,6 +1,6 @@
 from flask import Flask, render_template, jsonify, request
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token, unset_jwt_cookies
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import timedelta
 
 from models.usuario import Usuario
@@ -62,9 +62,32 @@ def logout():
     unset_jwt_cookies(response)
     return response
 
-@app.route('/register', methods=['GET'])
-def register_page():
-    return render_template('register.html')
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'GET':
+        return render_template('register.html')
+
+    data = request.get_json()
+    nombre = data.get('nombre')
+    email = data.get('email')
+    password = data.get('password')
+
+    if not nombre or not email or not password:
+        return jsonify({'error': 'Todos los campos son obligatorios'}), 400
+
+    # Verificar si el usuario ya existe
+    if Usuario.query.filter_by(email=email).first():
+        return jsonify({'error': 'El correo ya está registrado'}), 400
+
+    # Hashear la contraseña antes de almacenarla
+    hashed_password = generate_password_hash(password)
+
+    nuevo_usuario = Usuario(nombre=nombre, email=email, password=hashed_password)
+    db.session.add(nuevo_usuario)
+    db.session.commit()
+
+    return jsonify({'mensaje': 'Usuario registrado exitosamente'}), 201
+
 
 @app.context_processor
 def inject_documento():
@@ -110,7 +133,23 @@ def detalle_equipo(documento, id_equipo, nombre_equipo):
     if not equipo or equipo.nombre.replace(" ", "-").lower() != nombre_equipo:
         return "Equipo no encontrado", 404
 
-    return render_template('detalle_equipo.html', usuario=usuario, equipo=equipo, documento=documento)
+    # Obtener los nombres de las categorías
+    categoria_edad = db.session.get(CategoriaEdad, equipo.id_categoria_edad)
+    categoria_sexo = db.session.get(CategoriaSexo, equipo.id_categoria_sexo)
+
+    equipo_detalle = {
+        "nombre": equipo.nombre,
+        "descripcion": equipo.descripcion,
+        "categoria_edad": categoria_edad.nombre if categoria_edad else "Sin categoría",
+        "categoria_sexo": categoria_sexo.nombre if categoria_sexo else "Sin categoría"
+    }
+
+    return render_template(
+        'detalle_equipo.html',
+        usuario=usuario,
+        equipo=equipo_detalle,
+        documento=documento
+    )
 
 # Manejo de errores
 @app.errorhandler(404)
