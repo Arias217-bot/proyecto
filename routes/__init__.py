@@ -1,5 +1,5 @@
 from flask import Blueprint
-from .routes import *
+from .usuario_routes import *
 from .equipo_routes import equipo_bp
 
 # Definir los blueprints aquí para importarlos fácilmente

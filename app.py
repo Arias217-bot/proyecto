@@ -2,7 +2,12 @@ from flask import Flask, render_template, jsonify, request
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token, unset_jwt_cookies
 from werkzeug.security import check_password_hash
 from datetime import timedelta
+
 from models.usuario import Usuario
+from models.equipo import Equipo
+from models.categoria_edad import CategoriaEdad
+from models.categoria_sexo import CategoriaSexo
+
 from config import init_db, db
 from routes import blueprints
 
@@ -61,12 +66,51 @@ def logout():
 def register_page():
     return render_template('register.html')
 
+@app.context_processor
+def inject_documento():
+    try:
+        documento = get_jwt_identity()
+        return {'documento': documento}
+    except:
+        return {'documento': None}
+
 @app.route('/perfil/<documento>')
 def profile_page(documento):
     usuario = db.session.get(Usuario, documento)
     if not usuario:
         return "Usuario no encontrado", 404
-    return render_template('profile.html', usuario=usuario)
+    return render_template('profile.html', usuario=usuario, documento=documento)
+
+@app.route('/perfil/<documento>/equipos')
+def perfil_equipos(documento):
+    usuario = db.session.get(Usuario, documento)
+    if not usuario:
+        return "Usuario no encontrado", 404
+
+    equipos = Equipo.query.all()  # O filtra por usuario si corresponde
+    categorias_edad = CategoriaEdad.query.all()
+    categorias_sexo = CategoriaSexo.query.all()
+
+    return render_template(
+        'equipos.html',
+        usuario=usuario,
+        equipos=[e.to_dict() for e in equipos], 
+        categorias_edad=categorias_edad,
+        categorias_sexo=categorias_sexo,
+        documento=documento
+    )
+
+@app.route('/perfil/<documento>/equipos/<int:id_equipo>/<nombre_equipo>')
+def detalle_equipo(documento, id_equipo, nombre_equipo):
+    usuario = db.session.get(Usuario, documento)
+    if not usuario:
+        return "Usuario no encontrado", 404
+
+    equipo = db.session.get(Equipo, id_equipo)
+    if not equipo or equipo.nombre.replace(" ", "-").lower() != nombre_equipo:
+        return "Equipo no encontrado", 404
+
+    return render_template('detalle_equipo.html', usuario=usuario, equipo=equipo, documento=documento)
 
 # Manejo de errores
 @app.errorhandler(404)

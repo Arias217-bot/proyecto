@@ -27,8 +27,8 @@
     <!-- Barra lateral -->
     <div class="sidebar" id="sidebar">
         <ul class="list-unstyled">
-            <li><a href="/profile">Jugador</a></li>
-            <li><a href="#">Equipos</a></li>
+            <li><a href="{{ url_for('profile_page', documento=documento) }}">Jugador</a></li>
+            <li><a href="{{ url_for('perfil_equipos', documento=documento) }}">Equipos</a></li>
             <li><a href="#" class="text-danger logout-btn">Cerrar Sesión</a></li>
         </ul>
     </div>
