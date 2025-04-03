@@ -14,7 +14,7 @@ def calcular_angulo(p1, p2, p3):
         print(f"Error al calcular el ángulo: {e}")
         return None
 
-def evaluar_sentadilla(landmarks):
+def evaluar_sentadillas(landmarks):
     """
     Evalúa la técnica de sentadilla basada en los landmarks proporcionados.
     Args:

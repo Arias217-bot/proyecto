@@ -9,7 +9,8 @@ from mediapipe.python.solutions.pose import PoseLandmark
 # Inicializar el archivo CSV
 csv_file = open('analisis_postura.csv', mode='w', newline='')
 csv_writer = csv.writer(csv_file)
-csv_writer.writerow(['Frame', 'Angulo Codo', 'Angulo Rodilla', 'Angulo Tronco', 'Manos Sobre Frente'])
+csv_writer.writerow(['Frame', 'Angulo Codo Izq', 'Angulo Rodilla Izq', 'Angulo Tronco Izq', 'Mano Izq Sobre Frente',
+                     'Angulo Codo Der', 'Angulo Rodilla Der', 'Angulo Tronco Der', 'Mano Der Sobre Frente'])
 
 # Inicializar Mediapipe
 mp_pose = mp.solutions.pose
@@ -71,14 +72,35 @@ def detectar_colocador(landmarks):
         cadera_izq = landmarks[PoseLandmark.LEFT_HIP.value]
         rodilla_izq = landmarks[PoseLandmark.LEFT_KNEE.value]
         tobillo_izq = landmarks[PoseLandmark.LEFT_ANKLE.value]
+        ceja_izq = landmarks[PoseLandmark.LEFT_EYE.value]
+
+        # Acceder a landmarks individuales (lado derecho)
+        hombro_der = landmarks[PoseLandmark.RIGHT_SHOULDER.value]
+        codo_der = landmarks[PoseLandmark.RIGHT_ELBOW.value]
+        muñeca_der = landmarks[PoseLandmark.RIGHT_WRIST.value]
+        cadera_der = landmarks[PoseLandmark.RIGHT_HIP.value]
+        rodilla_der = landmarks[PoseLandmark.RIGHT_KNEE.value]
+        tobillo_der = landmarks[PoseLandmark.RIGHT_ANKLE.value]
+        ceja_der = landmarks[PoseLandmark.RIGHT_EYE.value]
 
         # Calcular ángulos (lado izquierdo)
         angulo_codo_izq = calcular_angulo(hombro_izq, codo_izq, muñeca_izq)
         angulo_rodilla_izq = calcular_angulo(cadera_izq, rodilla_izq, tobillo_izq)
+        angulo_tronco_izq = calcular_angulo(hombro_izq, cadera_izq, rodilla_izq)
+
+        # Calcular ángulos (lado derecho)
+        angulo_codo_der = calcular_angulo(hombro_der, codo_der, muñeca_der)
+        angulo_rodilla_der = calcular_angulo(cadera_der, rodilla_der, tobillo_der)
+        angulo_tronco_der = calcular_angulo(hombro_der, cadera_der, rodilla_der)
 
         # Verificar si los ángulos son válidos
-        if angulo_codo_izq is None or angulo_rodilla_izq is None:
+        if None in [angulo_codo_izq, angulo_rodilla_izq, angulo_tronco_izq,
+                    angulo_codo_der, angulo_rodilla_der, angulo_tronco_der]:
             return {"mensajes": ["❌ No se pudieron calcular algunos ángulos"], "datos": []}
+
+        # Evaluar si las manos están sobre la frente
+        manos_sobre_frente_izq = muñeca_izq.y < ceja_izq.y
+        manos_sobre_frente_der = muñeca_der.y < ceja_der.y
 
         # Evaluación de la postura
         resultados = []
@@ -91,16 +113,51 @@ def detectar_colocador(landmarks):
         else:
             resultados.append('✅ Codo izquierdo correcto')
 
+        # Evaluar codo derecho
+        if angulo_codo_der < 90:
+            resultados.append('❌ Codo derecho muy cerrado')
+        elif angulo_codo_der > 120:
+            resultados.append('❌ Codo derecho muy abierto')
+        else:
+            resultados.append('✅ Codo derecho correcto')
+
         # Evaluar rodilla izquierda
         if 100 <= angulo_rodilla_izq <= 140:
             resultados.append('✅ Rodilla izquierda correcta')
         else:
             resultados.append('❌ Ajustar rodilla izquierda')
 
+        # Evaluar rodilla derecha
+        if 100 <= angulo_rodilla_der <= 140:
+            resultados.append('✅ Rodilla derecha correcta')
+        else:
+            resultados.append('❌ Ajustar rodilla derecha')
+
+        # Evaluar estabilidad del tronco (promedio de ambos lados)
+        angulo_tronco_promedio = (angulo_tronco_izq + angulo_tronco_der) / 2
+        if 80 <= angulo_tronco_promedio <= 100:
+            resultados.append('✅ Tronco estable')
+        else:
+            resultados.append('❌ Ajustar estabilidad del tronco')
+
+        # Evaluar manos sobre la frente
+        if manos_sobre_frente_izq:
+            resultados.append('✅ Mano izquierda sobre la frente')
+        else:
+            resultados.append('❌ Mano izquierda no está sobre la frente')
+
+        if manos_sobre_frente_der:
+            resultados.append('✅ Mano derecha sobre la frente')
+        else:
+            resultados.append('❌ Mano derecha no está sobre la frente')
+
         evaluacion = "\n".join(resultados)
         return {
             "mensajes": [evaluacion],
-            "datos": [angulo_codo_izq, angulo_rodilla_izq, None, None]
+            "datos": [
+                angulo_codo_izq, angulo_rodilla_izq, angulo_tronco_izq, manos_sobre_frente_izq,
+                angulo_codo_der, angulo_rodilla_der, angulo_tronco_der, manos_sobre_frente_der
+            ]
         }
 
     except Exception as e:
@@ -136,16 +193,21 @@ while cap.isOpened():
         # Detectar colocador y obtener resultados
         resultado = detectar_colocador(results.pose_landmarks.landmark)
         if resultado["datos"]:
-            angulo_codo, angulo_rodilla, angulo_tronco, manos_sobre_frente = resultado["datos"]
+            angulo_codo_izq, angulo_rodilla_izq, angulo_tronco_izq, manos_sobre_frente_izq, \
+            angulo_codo_der, angulo_rodilla_der, angulo_tronco_der, manos_sobre_frente_der = resultado["datos"]
             evaluacion = resultado["mensajes"][0]  # Obtener el mensaje de evaluación
             # Guardar datos en el archivo CSV
             with open('analisis_postura.csv', mode='a', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow([cap.get(cv2.CAP_PROP_POS_FRAMES),  # Número de cuadro
-                                 angulo_codo, 
-                                 angulo_rodilla, 
-                                 angulo_tronco, 
-                                 manos_sobre_frente])
+                                 angulo_codo_izq, 
+                                 angulo_rodilla_izq, 
+                                 angulo_tronco_izq, 
+                                 manos_sobre_frente_izq,
+                                 angulo_codo_der, 
+                                 angulo_rodilla_der, 
+                                 angulo_tronco_der, 
+                                 manos_sobre_frente_der])
         else:
             print("❌ No se pudieron guardar los datos debido a errores en la detección.")
             evaluacion = "❌ Error en la detección del colocador"  # Mensaje de error predeterminado
