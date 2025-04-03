@@ -25,6 +25,8 @@ for bp in blueprints:
         app.register_blueprint(bp, url_prefix='/usuarios')
     elif bp.name == "equipo_bp":
         app.register_blueprint(bp, url_prefix='/equipos')
+    elif bp.name == "partido_bp":
+        app.register_blueprint(bp, url_prefix='/partidos')
 
 # Rutas
 @app.route('/login', methods=['GET', 'POST'])
