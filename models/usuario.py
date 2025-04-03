@@ -32,3 +32,4 @@ class Usuario(EntidadBase):
                 self.set_password(value)
             else:
                 setattr(self, key, value)
+

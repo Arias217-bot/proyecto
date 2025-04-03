@@ -59,3 +59,4 @@ class EntidadRoutes:
         db.session.delete(registro)
         db.session.commit()
         return jsonify({"mensaje": f"{self.modelo.__name__} eliminado"}), 200
+

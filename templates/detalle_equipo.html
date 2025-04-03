@@ -22,6 +22,49 @@
         </tbody>
     </table>
 
+    <!-- Tabla de integrantes -->
+    <h3 class="text-center mt-4" style="color: black; font-weight: bold;">Integrantes del Equipo</h3>
+    <table class="table mt-4 text-center" style="border-radius: 10px; overflow: hidden;">
+        <thead style="background-color: black; color: white;">
+            <tr>
+                <th scope="col">Documento</th>
+                <th scope="col">Nombre</th>
+                <th scope="col">Rol</th>
+                <th scope="col">Posición</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for integrante in integrantes %}
+            <tr style="background-color: white; color: black;">
+                <td>{{ integrante.documento }}</td>
+                <td>{{ integrante.nombre }}</td>
+                <td>{{ integrante.rol }}</td>
+                <td>{{ integrante.posicion }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Sección para subir videos de partidos -->
+    <h3 class="text-center mt-4" style="color: black; font-weight: bold;">Subir Video del Partido</h3>
+    <form action="" method="POST" enctype="multipart/form-data" class="text-center mt-3">
+        <input type="file" name="video" accept="video/*" class="form-control" required>
+        <button type="submit" class="btn btn-dark mt-2">Subir Video</button>
+    </form>
+
+    <!-- Lista de videos subidos -->
+    <h3 class="text-center mt-4" style="color: black; font-weight: bold;">Videos de Partidos</h3>
+    <div class="list-group">
+        {% for video in videos %}
+        <div class="list-group-item text-center" style="background-color: white; color: black;">
+            <video width="100%" controls>
+                <source src="" type="video/mp4">
+                Tu navegador no soporta la reproducción de videos.
+            </video>
+        </div>
+        {% endfor %}
+    </div>
+
     <div class="text-center">
         <a href="{{ url_for('perfil_equipos', documento=documento) }}" class="btn btn-secondary mt-3">Volver</a>
     </div>

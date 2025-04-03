@@ -30,7 +30,7 @@
 
 </div>
 
-<!-- Modal para crear un equipo -->
+<!-- Modal Panel para crear un equipo -->
 <div class="modal fade" id="crearEquipoModal" tabindex="-1" aria-labelledby="crearEquipoModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -79,26 +79,12 @@
 <script>
     document.getElementById("crearEquipoForm").addEventListener("submit", function(event) {
         event.preventDefault();
-    
+
         const formData = new FormData(this);
         const jsonData = Object.fromEntries(formData.entries());
-        const nombreEquipo = jsonData.nombre.toLowerCase();
-        const listaEquipos = document.querySelectorAll("#listaEquipos li span:first-child");
-        
-        let nombreExiste = false;
-        listaEquipos.forEach(equipo => {
-            if (equipo.textContent.toLowerCase() === nombreEquipo) {
-                nombreExiste = true;
-            }
-        });
-        
-        if (nombreExiste) {
-            document.getElementById("nombreError").style.display = "block";
-            return;
-        } else {
-            document.getElementById("nombreError").style.display = "none";
-        }
-    
+
+        jsonData.documento = "{{ documento }}"; // Incluir el documento del usuario en la solicitud
+
         fetch("/equipos/", {
             method: "POST",
             headers: {
@@ -109,7 +95,7 @@
         .then(response => response.json())
         .then(data => {
             console.log("Equipo creado:", data);
-            location.reload();  // Recargar la página para actualizar la lista de equipos
+            location.reload();
         })
         .catch(error => console.error("Error al crear el equipo:", error));
     });
