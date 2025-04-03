@@ -1,0 +1,21 @@
+from routes.entidad_routes import EntidadRoutes
+from flask import render_template, request
+from config import db
+# Modelos
+from models.partido import Partido
+
+# Blueprints
+equipo_routes = EntidadRoutes('partido', Partido)
+equipo_bp = equipo_routes.bp  # El Blueprint que usaremos en `app.py`
+
+@equipo_bp.route('/ver', methods=['GET'])
+def partido_page():
+
+    query = request.args.get('q','')
+    if query:
+        partidos_lista = db.session.query(Partido).filter(
+            Partido.id_partido.like(f'%{query}%') 
+        ).all()
+    else:
+        partidos_lista = db.session.query(Partido).all()
+    return render_template('partido.html', partidos=partidos_lista,q=query) 
