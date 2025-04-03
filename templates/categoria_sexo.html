@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Categoría por Sexo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      min-height: 100vh;
+      background-color: #f8f9fa;
+      padding: 1rem;
+    }
+    .card-container {
+      max-width: 700px;
+      margin: auto;
+    }
+    .card-list {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="card-container">
+    <div class="mb-4">
+      <form method="GET" action="{{ url_for('categoria_sexo.categoria_sexo_page') }}" class="d-flex">
+        <input type="text" name="q" class="form-control me-2" placeholder="Buscar categoría..." value="{{ q }}">
+        <button type="submit" class="btn btn-outline-primary">Buscar</button>
+      </form>
+    </div>
+
+    <div class="text-center mb-3">
+      <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#formPanel" aria-expanded="false" aria-controls="formPanel">
+        ➕ Crear Nueva Categoría
+      </button>
+    </div>
+
+    <div class="collapse mb-4" id="formPanel">
+      <div class="card card-body">
+        <form id="crearCategoriaForm">
+          <div class="mb-3">
+            <input type="text" id="nombreCategoria" name="nombre" class="form-control" placeholder="Escribe el nombre de la categoría" required>
+          </div>
+          <button id="crearCategoria" type="button" class="btn btn-primary">Crear</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card shadow-lg p-4 rounded-4 card-list">
+      <h2 class="text-center mb-4">Categorías por Sexo</h2>
+      {% for categoria_sexo in categorias_sexo %}
+        <div class="border p-3 mb-3 rounded bg-white">
+          <div class="mb-2"><strong>Id:</strong> {{ categoria_sexo.id_categoria_sexo }}</div>
+          <div class="mb-2"><strong>Nombre:</strong> {{ categoria_sexo.nombre }}</div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-warning btn-sm editar-categoria" data-id="{{ categoria_sexo.id_categoria_sexo }}" data-nombre="{{ categoria_sexo.nombre }}">✏️ Editar</button>
+            <form method="POST" action="{{ url_for('categoria_sexo.delete', id=categoria_sexo.id_categoria_sexo) }}" onsubmit="return confirmarEliminacion()">
+                <button type="button" class="btn btn-danger btn-sm eliminar-categoria" data-id="{{ categoria_sexo.id_categoria_sexo }}">
+                    🗑️ Eliminar
+                  </button>
+            </form>
+          </div>
+          <div class="editar-formulario d-none mt-3" id="formulario-{{ categoria_sexo.id_categoria_sexo }}">
+            <input type="text" id="nombreCategoria-{{ categoria_sexo.id_categoria_sexo }}" class="form-control mb-2" value="{{ categoria_sexo.nombre }}">
+            <button class="btn btn-primary btn-sm guardar-categoria" data-id="{{ categoria_sexo.id_categoria_sexo }}">Guardar</button>
+            <button class="btn btn-secondary btn-sm cancelar-edicion" data-id="{{ categoria_sexo.id_categoria_sexo }}">Cancelar</button>
+          </div>
+        </div>
+      {% else %}
+        <p class="text-center">No se encontraron categorías</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("crearCategoria").addEventListener("click", function () {
+      const nombreCategoria = document.getElementById("nombreCategoria").value;
+  
+      if (!nombreCategoria.trim()) {
+        alert("El nombre de la categoría no puede estar vacío.");
+        return;
+      }
+  
+      fetch("/categoria_sexo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: nombreCategoria })
+      })
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error("Error al crear la categoría.");
+        }
+      })
+      .then(data => {
+        console.log("Categoría creada:", data);
+        window.location.reload(); // Recargar la página para mostrar la nueva categoría
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        alert("Hubo un problema al crear la categoría.");
+      });
+    });
+
+    document.querySelectorAll(".editar-categoria").forEach(button => {
+      button.addEventListener("click", function () {
+        const categoriaId = this.getAttribute("data-id");
+        document.getElementById(`formulario-${categoriaId}`).classList.toggle("d-none");
+      });
+    });
+
+    document.getElementById("crearCategoria").addEventListener("click", function () {
+        const nombreCategoria = document.getElementById("nombreCategoria").value;
+
+        fetch("/categoria_sexo", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ "nombre": nombreCategoria })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => { throw new Error(text) });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Categoría creada:", data);
+            window.location.reload();
+        })
+        .catch(error => console.error("Error:", error));
+
+        });
+
+    document.querySelectorAll(".cancelar-edicion").forEach(button => {
+      button.addEventListener("click", function () {
+        const categoriaId = this.getAttribute("data-id");
+        document.getElementById(`formulario-${categoriaId}`).classList.add("d-none");
+      });
+    });
+
+    function confirmarEliminacion() {
+      return confirm("¿Estás seguro de que quieres eliminar esta categoría?");
+    }
+
+    document.querySelectorAll(".eliminar-categoria").forEach(button => {
+        button.addEventListener("click", function () {
+        const categoriaId = this.getAttribute("data-id");
+        if (!confirm("¿Estás seguro de que quieres eliminar esta categoría?")) {
+            return;
+        }
+
+        fetch(`/categoria_sexo/${categoriaId}`, {
+            method: "DELETE"
+        })
+        .then(response => {
+            if (response.ok) {
+            window.location.reload(); // Recargar la página después de eliminar
+            } else {
+            alert("Error al eliminar la categoría");
+            }
+        })
+        .catch(error => console.error("Error:", error));
+        });
+    });
+  </script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
