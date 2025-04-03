@@ -24,6 +24,11 @@ def calcular_angulo(p1, p2, p3):
 def detectar_recibo(landmarks):
     """Detecta la postura de recibo basado en los puntos de referencia del cuerpo en voleibol."""
     try:
+        # Validar landmarks
+        if not isinstance(landmarks, list) or len(landmarks) < 33:
+            logging.error("La lista de landmarks es inválida o incompleta.")
+            return {"mensajes": ["Error: datos insuficientes para evaluar recibo"], "datos": {}}
+
         # Landmarks clave
         cadera = landmarks[PoseLandmark.LEFT_HIP.value]
         rodilla = landmarks[PoseLandmark.LEFT_KNEE.value]
@@ -36,26 +41,50 @@ def detectar_recibo(landmarks):
         angulo_tronco = calcular_angulo(cadera, hombro, cabeza)
         profundidad_sentadilla = calcular_angulo(cadera, rodilla, tobillo)
 
-        # Evaluaciones
-        posicion_correcta = evaluar_posicion(landmarks)
-        contacto_brazos = evaluar_contacto(manos)
-        estabilidad = evaluar_estabilidad(cadera, tobillo)
-        sentadilla_correcta = evaluar_sentadillas(profundidad_sentadilla)
-        movimiento_excesivo = evaluar_movimiento(landmarks)
-
+        # Validación de ángulos
         if angulo_tronco is None or profundidad_sentadilla is None:
             logging.error("No se pudieron calcular algunos ángulos.")
             return {"mensajes": ["Error en los cálculos de ángulos"], "datos": {}}
 
-        # Resultados finales
-        resultados = [
-            "Ángulo del tronco correcto" if 70 <= angulo_tronco <= 110 else "Ajustar ángulo del tronco",
-            "Profundidad de sentadilla correcta" if sentadilla_correcta else "Ajustar profundidad de sentadilla",
-            "Posición corporal correcta" if posicion_correcta else "Ajustar posición",
-            "Contacto de balón correcto" if contacto_brazos else "Ajustar contacto de brazos",
-            "Estabilidad correcta" if estabilidad else "Ajustar estabilidad",
-            "Movimiento controlado" if not movimiento_excesivo else "Reducir movimiento innecesario"
-        ]
+        # Evaluaciones
+        posicion_correcta = evaluar_posicion(landmarks)
+        contacto_brazos = evaluar_contacto(manos)
+        estabilidad = evaluar_estabilidad(landmarks)  # Mejor pasar todos los puntos
+        sentadilla_correcta = evaluar_sentadillas(profundidad_sentadilla)
+        movimiento_excesivo = evaluar_movimiento(landmarks)  # Se podría analizar en secuencia
+
+        # Resultados finales con mensajes más explicativos
+        resultados = []
+
+        if 70 <= angulo_tronco <= 110:
+            resultados.append("✅ Ángulo del tronco dentro del rango adecuado.")
+        else:
+            resultados.append("⚠️ Ajustar inclinación del tronco para mejorar estabilidad.")
+
+        if sentadilla_correcta:
+            resultados.append("✅ Profundidad de sentadilla correcta para absorción del impacto.")
+        else:
+            resultados.append("⚠️ Ajustar la flexión de rodillas para mayor control.")
+
+        if posicion_correcta:
+            resultados.append("✅ Posición corporal adecuada para recibir el balón.")
+        else:
+            resultados.append("⚠️ Ajustar la postura general para optimizar el recibo.")
+
+        if contacto_brazos:
+            resultados.append("✅ Contacto con el balón correcto.")
+        else:
+            resultados.append("⚠️ Ajustar posición de los brazos para mejorar contacto.")
+
+        if estabilidad:
+            resultados.append("✅ Postura estable al momento del contacto.")
+        else:
+            resultados.append("⚠️ Mejorar el balance y la posición de los pies.")
+
+        if not movimiento_excesivo:
+            resultados.append("✅ Movimiento controlado durante el recibo.")
+        else:
+            resultados.append("⚠️ Reducir movimientos innecesarios que pueden afectar el control.")
 
         return {
             "mensajes": resultados,
@@ -71,4 +100,4 @@ def detectar_recibo(landmarks):
 
     except Exception as e:
         logging.error(f"Error en detectar_recibo: {e}", exc_info=True)
-        return {"mensajes": ["Error en la detección de recibo"], "datos": {}}
+        return {"mensajes": ["❌ Error en la detección del recibo"], "datos": {}}

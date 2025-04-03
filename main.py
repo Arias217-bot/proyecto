@@ -11,7 +11,7 @@ from threading import Lock
 from PIL import Image, ImageTk
 
 # Importar las evaluaciones y detecciones
-from detecciones.deteccion_saque import evaluar_saque
+from detecciones.deteccion_saque import detectar_saque
 from detecciones.deteccion_colocador import detectar_colocador
 from detecciones.deteccion_ataque import detectar_ataque
 from detecciones.deteccion_recibo import detectar_recibo
@@ -220,7 +220,7 @@ def iniciar_procesamiento():
 
     # Mapear la detección seleccionada a la función correspondiente
     opciones = {
-        "saque": evaluar_saque,
+        "saque": detectar_saque,
         "colocador": detectar_colocador,
         "ataque": detectar_ataque,
         "recibo": detectar_recibo

@@ -4,7 +4,8 @@ import numpy as np
 import csv
 import math
 from mediapipe.python.solutions.pose import PoseLandmark
-
+from evaluaciones.evaluar_estabilidad import evaluar_estabilidad
+from evaluaciones.evaluar_contacto import evaluar_contacto
 
 # Inicializar el archivo CSV
 csv_file = open('analisis_postura.csv', mode='w', newline='')
@@ -18,52 +19,26 @@ mp_drawing = mp.solutions.drawing_utils
 pose = mp_pose.Pose()
 
 def calcular_angulo(a, b, c):
-    """
-    Calcula el ángulo entre tres puntos.
-    Args:
-        a, b, c: Coordenadas de los puntos.
-    Returns:
-        float: Ángulo en grados o None si no se puede calcular.
-    """
+    """Calcula el ángulo entre tres puntos."""
     try:
-        a = [a.x, a.y]  # Primer punto
-        b = [b.x, b.y]  # Punto medio
-        c = [c.x, c.y]  # Último punto
-
-        # Calcular los vectores entre los puntos
+        a = [a.x, a.y]
+        b = [b.x, b.y]
+        c = [c.x, c.y]
         ba = [a[0] - b[0], a[1] - b[1]]
         bc = [c[0] - b[0], c[1] - b[1]]
-
-        # Verificar que los vectores no sean nulos
-        if math.sqrt(ba[0]**2 + ba[1]**2) == 0 or math.sqrt(bc[0]**2 + bc[1]**2) == 0:
-            return None  # Retorna None si no se puede calcular el ángulo
-
-        # Calcular el ángulo entre los vectores
         coseno_angulo = (ba[0] * bc[0] + ba[1] * bc[1]) / (math.sqrt(ba[0]**2 + ba[1]**2) * math.sqrt(bc[0]**2 + bc[1]**2))
-        angulo = math.acos(coseno_angulo)  # Ángulo en radianes
-        return math.degrees(angulo)  # Convertir a grados
-    except AttributeError:
-        print("❌ Error: Uno de los landmarks no tiene las propiedades necesarias.")
+        angulo = math.acos(coseno_angulo)
+        return math.degrees(angulo)
+    except Exception as e:
+        print(f"Error al calcular el ángulo: {e}")
         return None
 
 def verificar_landmark(landmark):
-    """
-    Verifica si un landmark es confiable basado en su visibilidad.
-    Args:
-        landmark: Landmark de Mediapipe.
-    Returns:
-        bool: True si el landmark es confiable, False en caso contrario.
-    """
+    """Verifica si un landmark es confiable basado en su visibilidad."""
     return hasattr(landmark, 'visibility') and landmark.visibility >= 0.5
 
 def detectar_colocador(landmarks):
-    """
-    Detecta la postura del colocador basado en los puntos de referencia del cuerpo.
-    Args:
-        landmarks: Lista de puntos de referencia del cuerpo.
-    Returns:
-        dict: Resultados de la detección con mensajes y datos relevantes.
-    """
+    """Detecta la postura del colocador basado en los puntos de referencia del cuerpo."""
     try:
         # Acceder a landmarks individuales (lado izquierdo)
         hombro_izq = landmarks[PoseLandmark.LEFT_SHOULDER.value]
@@ -97,6 +72,9 @@ def detectar_colocador(landmarks):
         if None in [angulo_codo_izq, angulo_rodilla_izq, angulo_tronco_izq,
                     angulo_codo_der, angulo_rodilla_der, angulo_tronco_der]:
             return {"mensajes": ["❌ No se pudieron calcular algunos ángulos"], "datos": []}
+
+        # Evaluar estabilidad del tronco
+        estabilidad = evaluar_estabilidad(landmarks)
 
         # Evaluar si las manos están sobre la frente
         manos_sobre_frente_izq = muñeca_izq.y < ceja_izq.y
@@ -133,9 +111,8 @@ def detectar_colocador(landmarks):
         else:
             resultados.append('❌ Ajustar rodilla derecha')
 
-        # Evaluar estabilidad del tronco (promedio de ambos lados)
-        angulo_tronco_promedio = (angulo_tronco_izq + angulo_tronco_der) / 2
-        if 80 <= angulo_tronco_promedio <= 100:
+        # Evaluar estabilidad del tronco
+        if estabilidad:
             resultados.append('✅ Tronco estable')
         else:
             resultados.append('❌ Ajustar estabilidad del tronco')
@@ -165,7 +142,7 @@ def detectar_colocador(landmarks):
         return {"mensajes": ["❌ Error en la detección del colocador"], "datos": []}
 
 # Cargar el video
-cap = cv2.VideoCapture('HowToTimeAVolleyball.mp4')  # Cambia esto por la ruta del video
+cap = cv2.VideoCapture('HowToTimeAVolleyball.mp4')
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
@@ -191,32 +168,17 @@ while cap.isOpened():
         landmarks = results.pose_landmarks.landmark
         
         # Detectar colocador y obtener resultados
-        resultado = detectar_colocador(results.pose_landmarks.landmark)
+        resultado = detectar_colocador(landmarks)
         if resultado["datos"]:
-            angulo_codo_izq, angulo_rodilla_izq, angulo_tronco_izq, manos_sobre_frente_izq, \
-            angulo_codo_der, angulo_rodilla_der, angulo_tronco_der, manos_sobre_frente_der = resultado["datos"]
-            evaluacion = resultado["mensajes"][0]  # Obtener el mensaje de evaluación
-            # Guardar datos en el archivo CSV
-            with open('analisis_postura.csv', mode='a', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow([cap.get(cv2.CAP_PROP_POS_FRAMES),  # Número de cuadro
-                                 angulo_codo_izq, 
-                                 angulo_rodilla_izq, 
-                                 angulo_tronco_izq, 
-                                 manos_sobre_frente_izq,
-                                 angulo_codo_der, 
-                                 angulo_rodilla_der, 
-                                 angulo_tronco_der, 
-                                 manos_sobre_frente_der])
+            csv_writer.writerow([cap.get(cv2.CAP_PROP_POS_FRAMES), *resultado["datos"]])
         else:
             print("❌ No se pudieron guardar los datos debido a errores en la detección.")
-            evaluacion = "❌ Error en la detección del colocador"  # Mensaje de error predeterminado
 
         # Dibujar los resultados en la pantalla
         y0, dy = 50, 30
-        for i, line in enumerate(evaluacion.split('\n')):
+        for i, line in enumerate(resultado["mensajes"][0].split('\n')):
             y = y0 + i * dy
-            color = (0, 255, 0) if '✅' in line else (0, 255, 255) if '⚠️' in line else (0, 0, 255)
+            color = (0, 255, 0) if '✅' in line else (0, 0, 255)
             cv2.putText(frame, line, (50, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
     
     # Mostrar el video con la detección y los ángulos
