@@ -23,3 +23,9 @@ def categoria_edad_page():
         categorias_edad = db.session.query(CategoriaEdad).all()
     # Pasar el valor de búsqueda a la plantilla
     return render_template('categoria_edad.html', categorias_edad=categorias_edad, q=query)
+
+
+
+
+
+    

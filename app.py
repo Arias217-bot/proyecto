@@ -28,6 +28,8 @@ for bp in blueprints:
         app.register_blueprint(bp, url_prefix='/equipos')
     elif bp.name == "categoria_edad":
         app.register_blueprint(bp, url_prefix='/categoria_edad')
+    elif bp.name == "categoria_sexo":
+        app.register_blueprint(bp, url_prefix='/categoria_sexo')
 
 # Configuración de JWT
 app.config['JWT_SECRET_KEY'] = 'tu_clave_secreta'
