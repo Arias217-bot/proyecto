@@ -10,14 +10,17 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 from PIL import Image, ImageTk
 
-# Importar las evaluaciones y detecciones
-from detecciones.deteccion_saque import detectar_saque
-from detecciones.deteccion_colocador import detectar_colocador
-from detecciones.deteccion_ataque import detectar_ataque
-from detecciones.deteccion_recibo import detectar_recibo
+# Importar las detecciones desde el paquete modular
+from detecciones import (
+    detectar_saque,
+    detectar_colocador,
+    detectar_ataque,
+    detectar_recibo,
+    detectar_bloqueo
+)
 
 # Configurar logging para errores
-os.makedirs("Salidas", exist_ok=True)
+os.makedirs("logs", exist_ok=True)
 logging.basicConfig(filename="logs/errores.log", level=logging.ERROR, format="%(asctime)s - %(message)s")
 
 mp_pose = mp.solutions.pose
@@ -52,12 +55,42 @@ def procesar_frame(frame, pose, deteccion_func, frame_number):
         logging.error(f"Error procesando frame: {e}")
         return frame, {"mensajes": ["Error en la evaluación"], "datos": []}
 
-def guardar_resultados_csv(datos, nombre, encabezados):
+def guardar_resultados_csv(datos, path_video, deteccion):
     """Guarda los datos de evaluación en un archivo CSV dentro de la carpeta Salidas/"""
     carpeta_salida = "Salidas"
     os.makedirs(carpeta_salida, exist_ok=True)  # Crear la carpeta si no existe
-    filename = os.path.join(carpeta_salida, f"resultados_{nombre}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+
+    # Extraer el nombre base del video
+    nombre_video = os.path.splitext(os.path.basename(path_video))[0]
+    filename = os.path.join(carpeta_salida, f"{nombre_video}_procesado_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+
     try:
+        # Ajustar los encabezados y datos según la detección seleccionada
+        encabezados = {
+            "colocador": [
+                "Frame", "Angulo Codo Izq", "Angulo Rodilla Izq", "Angulo Tronco Izq", "Mano Izq Sobre Frente",
+                "Angulo Codo Der", "Angulo Rodilla Der", "Angulo Tronco Der", "Mano Der Sobre Frente",
+                "Estabilidad", "Movimiento Controlado"
+            ],
+            "saque": [
+                "Frame", "Angulo Codo", "Altura Brazo", "Velocidad Angular Codo", "Saque Valido",
+                "Estabilidad", "Movimiento Controlado"
+            ],
+            "ataque": [
+                "Frame", "Angulo Codo Izq", "Angulo Codo Der", "Velocidad Angular Codo Izq", "Velocidad Angular Codo Der",
+                "Ataque Valido", "Contacto Valido", "Simetria", "Estabilidad", "Movimiento Controlado"
+            ],
+            "recibo": [
+                "Frame", "Angulo Tronco", "Profundidad Sentadilla", "Posicion Correcta", "Contacto Brazos",
+                "Estabilidad", "Movimiento Controlado", "Distancia Entre Pies"
+            ],
+            "bloqueo": [
+                "Frame", "Angulo Brazo Izq", "Angulo Brazo Der", "Altura Bloqueo Izq", "Altura Bloqueo Der",
+                "Alineacion Tronco", "Bloqueo Valido", "Separacion Manos", "Simetria", "Estabilidad"
+            ]
+        }.get(deteccion, ["Frame", "Mensajes"])
+
+        # Crear el DataFrame con los datos y encabezados
         df = pd.DataFrame(datos, columns=encabezados)
         df.to_csv(filename, index=False)
         print(f"Resultados guardados en: {filename}")
@@ -65,7 +98,7 @@ def guardar_resultados_csv(datos, nombre, encabezados):
         logging.error(f"Error al guardar el archivo CSV: {e}")
         print("No se pudieron guardar los resultados.")
 
-def procesar_video(video_path, deteccion_func, output_path):
+def procesar_video(video_path, deteccion_func, deteccion, output_path):
     """Procesa el video frame por frame."""
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -89,7 +122,6 @@ def procesar_video(video_path, deteccion_func, output_path):
 
         pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
         datos_resultados = []
-        encabezados_csv = ["Frame", "Mensajes"]
         frame_number = 0
         lock = Lock()
 
@@ -111,11 +143,11 @@ def procesar_video(video_path, deteccion_func, output_path):
                     frame, evaluacion_resultados = future.result()
                     out.write(frame)
                     with lock:
-                        datos_resultados.append([frame_number, evaluacion_resultados["mensajes"]])
+                        datos_resultados.append([frame_number, *evaluacion_resultados["datos"]])
                 except Exception as e:
                     logging.error(f"Error al procesar un futuro: {e}")
 
-        guardar_resultados_csv(datos_resultados, "video_procesado", encabezados_csv)
+        guardar_resultados_csv(datos_resultados, video_path, deteccion)
         print("Video procesado y guardado correctamente.")
     except Exception as e:
         logging.error(f"Error en el procesamiento del video: {e}")
@@ -173,7 +205,8 @@ def seleccionar_deteccion():
         "Saque": "saque",
         "Colocador": "colocador",
         "Ataque": "ataque",
-        "Recibo": "recibo"
+        "Recibo": "recibo",
+        "Bloqueo": "bloqueo"
     }
 
     seleccion = StringVar()
@@ -223,7 +256,8 @@ def iniciar_procesamiento():
         "saque": detectar_saque,
         "colocador": detectar_colocador,
         "ataque": detectar_ataque,
-        "recibo": detectar_recibo
+        "recibo": detectar_recibo,
+        "bloqueo": detectar_bloqueo
     }
     deteccion_func = opciones.get(deteccion)
     if not deteccion_func:
@@ -238,7 +272,7 @@ def iniciar_procesamiento():
             print("No se seleccionó ningún archivo de video. Saliendo...")
             return
         output_path = os.path.join("Salidas", f"{deteccion}_procesado.avi")
-        procesar_video(video_path, deteccion_func, output_path)
+        procesar_video(video_path, deteccion_func, deteccion, output_path)
     elif fuente == "camara":
         procesar_video_camara(deteccion_func)
     else:

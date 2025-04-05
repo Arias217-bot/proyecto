@@ -1,19 +1,6 @@
-import cv2
-import mediapipe as mp
-import numpy as np
 import math
-
-from evaluaciones.evaluar_estabilidad import evaluar_estabilidad
-from evaluaciones.evaluar_posicion import evaluar_posicion
-from evaluaciones.evaluar_movimiento import evaluar_movimiento
-from evaluaciones.evaluar_contacto import evaluar_contacto
-from evaluaciones.evaluar_seguimiento import evaluar_seguimiento
 from mediapipe.python.solutions.pose import PoseLandmark
-
-# Inicializar Mediapipe
-mp_pose = mp.solutions.pose
-mp_drawing = mp.solutions.drawing_utils
-pose = mp_pose.Pose()
+from evaluaciones import evaluar_estabilidad, evaluar_contacto
 
 def calcular_angulo(p1, p2, p3):
     """Calcula el ángulo entre tres puntos."""
@@ -51,12 +38,7 @@ def detectar_saque(landmarks):
         muñeca = landmarks[PoseLandmark.RIGHT_WRIST.value]
 
         # Validar altura inicial del brazo (muñeca debe estar por encima del hombro)
-        altura_inicial_valida = muñeca.y < hombro.y
-        if not altura_inicial_valida:
-            return {
-                "mensajes": ["❌ El brazo debe iniciar en una posición elevada."],
-                "datos": []
-            }
+        altura_brazo_correcta = muñeca.y < hombro.y
 
         # Calcular ángulo del codo
         angulo_codo = calcular_angulo(hombro, codo, muñeca)
@@ -67,21 +49,38 @@ def detectar_saque(landmarks):
         alineacion_hombro = abs(hombro.x - codo.x) < 0.1
         alineacion_codo = abs(codo.x - muñeca.x) < 0.1
 
+        # Evaluar contacto con el balón
+        contacto_valido = evaluar_contacto(landmarks)
+
+        # Evaluar estabilidad del tronco
+        estabilidad = evaluar_estabilidad(landmarks)
+
         # Evaluar si el saque es válido
-        saque_valido = angulo_codo > 90 and alineacion_hombro and alineacion_codo
+        saque_valido = angulo_codo > 90 and altura_brazo_correcta and alineacion_hombro and alineacion_codo and contacto_valido
 
         # Mensajes descriptivos
         mensajes = [
             f"Ángulo del codo: {angulo_codo:.2f}°",
+            f"Altura del brazo: {'Correcta' if altura_brazo_correcta else 'Incorrecta'}",
+            f"Alineación del hombro: {'Correcta' if alineacion_hombro else 'Incorrecta'}",
+            f"Alineación del codo: {'Correcta' if alineacion_codo else 'Incorrecta'}",
+            f"Contacto con el balón: {'Correcto' if contacto_valido else 'Incorrecto'}",
+            f"Estabilidad del tronco: {'Correcta' if estabilidad else 'Incorrecta'}",
             f"Saque {'válido' if saque_valido else 'no válido'}"
         ]
-        if not alineacion_hombro:
-            mensajes.append("❌ Alinear mejor el hombro con el codo.")
-        if not alineacion_codo:
-            mensajes.append("❌ Alinear mejor el codo con la muñeca.")
 
-        return {"mensajes": mensajes, "datos": [angulo_codo, saque_valido]}
+        # Salida estructurada
+        return {
+            "mensajes": mensajes,
+            "datos": [
+                angulo_codo, altura_brazo_correcta, alineacion_hombro,
+                alineacion_codo, contacto_valido, estabilidad, saque_valido
+            ]
+        }
 
     except Exception as e:
         print(f"Error en detectar_saque: {e}")
-        return {"mensajes": ["❌ Error en la detección del saque"], "datos": []}
+        return {
+            "mensajes": ["Error en la detección del saque"],
+            "datos": [None, None, None, None, None, None, False]
+        }

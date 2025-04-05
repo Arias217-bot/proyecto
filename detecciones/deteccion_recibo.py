@@ -1,33 +1,53 @@
 import math
 import logging
 from mediapipe.python.solutions.pose import PoseLandmark
-from evaluaciones.evaluar_sentadillas import evaluar_sentadillas
-from evaluaciones.evaluar_contacto import evaluar_contacto
-from evaluaciones.evaluar_posicion import evaluar_posicion
-from evaluaciones.evaluar_movimiento import evaluar_movimiento
-from evaluaciones.evaluar_estabilidad import evaluar_estabilidad
+from evaluaciones import evaluar_sentadillas, evaluar_contacto, evaluar_posicion, evaluar_movimiento, evaluar_estabilidad
 
 logging.basicConfig(level=logging.ERROR)
 
 def calcular_angulo(p1, p2, p3):
     """Calcula el ángulo entre tres puntos en 2D."""
-    if not all(hasattr(p, 'x') and hasattr(p, 'y') for p in [p1, p2, p3]):
-        logging.error("Todos los puntos deben tener atributos 'x' y 'y'.")
+    try:
+        angulo = math.degrees(
+            math.atan2(p3.y - p2.y, p3.x - p2.x) -
+            math.atan2(p1.y - p2.y, p1.x - p2.x)
+        )
+        return abs(angulo) if angulo >= 0 else abs(angulo + 360)
+    except Exception as e:
+        logging.error(f"Error al calcular el ángulo: {e}")
         return None
 
-    angulo = math.degrees(
-        math.atan2(p3.y - p2.y, p3.x - p2.x) - 
-        math.atan2(p1.y - p2.y, p1.x - p2.x)
-    )
-    return abs(angulo) if angulo >= 0 else abs(angulo + 360)
+def calcular_distancia(p1, p2):
+    """Calcula la distancia euclidiana entre dos puntos."""
+    try:
+        return math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2)
+    except Exception as e:
+        logging.error(f"Error al calcular la distancia: {e}")
+        return None
 
 def detectar_recibo(landmarks):
-    """Detecta la postura de recibo basado en los puntos de referencia del cuerpo en voleibol."""
+    """
+    Detecta la postura de recibo basado en los puntos de referencia del cuerpo en voleibol.
+    Args:
+        landmarks (list): Lista de landmarks detectados por MediaPipe.
+    Returns:
+        dict: Resultados de la evaluación con mensajes y datos relevantes.
+    """
     try:
         # Validar landmarks
-        if not isinstance(landmarks, list) or len(landmarks) < 33:
-            logging.error("La lista de landmarks es inválida o incompleta.")
-            return {"mensajes": ["Error: datos insuficientes para evaluar recibo"], "datos": {}}
+        required_landmarks = [
+            PoseLandmark.LEFT_HIP.value,
+            PoseLandmark.LEFT_KNEE.value,
+            PoseLandmark.LEFT_ANKLE.value,
+            PoseLandmark.LEFT_SHOULDER.value,
+            PoseLandmark.NOSE.value,
+            PoseLandmark.LEFT_WRIST.value,
+            PoseLandmark.RIGHT_WRIST.value,
+            PoseLandmark.LEFT_ANKLE.value,
+            PoseLandmark.RIGHT_ANKLE.value
+        ]
+        if not isinstance(landmarks, list) or not all(idx < len(landmarks) for idx in required_landmarks):
+            raise ValueError("Faltan landmarks esenciales para evaluar el recibo.")
 
         # Landmarks clave
         cadera = landmarks[PoseLandmark.LEFT_HIP.value]
@@ -36,6 +56,8 @@ def detectar_recibo(landmarks):
         hombro = landmarks[PoseLandmark.LEFT_SHOULDER.value]
         cabeza = landmarks[PoseLandmark.NOSE.value]
         manos = [landmarks[PoseLandmark.LEFT_WRIST.value], landmarks[PoseLandmark.RIGHT_WRIST.value]]
+        tobillo_izq = landmarks[PoseLandmark.LEFT_ANKLE.value]
+        tobillo_der = landmarks[PoseLandmark.RIGHT_ANKLE.value]
 
         # Cálculo de ángulos
         angulo_tronco = calcular_angulo(cadera, hombro, cabeza)
@@ -43,61 +65,46 @@ def detectar_recibo(landmarks):
 
         # Validación de ángulos
         if angulo_tronco is None or profundidad_sentadilla is None:
-            logging.error("No se pudieron calcular algunos ángulos.")
-            return {"mensajes": ["Error en los cálculos de ángulos"], "datos": {}}
+            raise ValueError("No se pudieron calcular algunos ángulos.")
 
         # Evaluaciones
         posicion_correcta = evaluar_posicion(landmarks)
         contacto_brazos = evaluar_contacto(manos)
-        estabilidad = evaluar_estabilidad(landmarks)  # Mejor pasar todos los puntos
+        estabilidad = evaluar_estabilidad(landmarks)
         sentadilla_correcta = evaluar_sentadillas(profundidad_sentadilla)
-        movimiento_excesivo = evaluar_movimiento(landmarks)  # Se podría analizar en secuencia
+        movimiento_excesivo = evaluar_movimiento(landmarks)
 
-        # Resultados finales con mensajes más explicativos
-        resultados = []
+        # Calcular distancia entre los pies
+        distancia_pies = calcular_distancia(tobillo_izq, tobillo_der)
 
-        if 70 <= angulo_tronco <= 110:
-            resultados.append("✅ Ángulo del tronco dentro del rango adecuado.")
-        else:
-            resultados.append("⚠️ Ajustar inclinación del tronco para mejorar estabilidad.")
+        # Mensajes descriptivos
+        mensajes = [
+            f"Ángulo del tronco: {angulo_tronco:.2f}° {'Adecuado' if 70 <= angulo_tronco <= 110 else 'Inadecuado'}",
+            f"Profundidad de sentadilla: {'Correcta' if sentadilla_correcta else 'Incorrecta'}",
+            f"Posición corporal: {'Adecuada' if posicion_correcta else 'Inadecuada'}",
+            f"Contacto con el balón: {'Correcto' if contacto_brazos else 'Incorrecto'}",
+            f"Estabilidad: {'Correcta' if estabilidad else 'Inadecuada'}",
+            f"Movimiento: {'Controlado' if not movimiento_excesivo else 'Excesivo'}",
+            f"Distancia entre pies: {distancia_pies:.2f}"
+        ]
 
-        if sentadilla_correcta:
-            resultados.append("✅ Profundidad de sentadilla correcta para absorción del impacto.")
-        else:
-            resultados.append("⚠️ Ajustar la flexión de rodillas para mayor control.")
-
-        if posicion_correcta:
-            resultados.append("✅ Posición corporal adecuada para recibir el balón.")
-        else:
-            resultados.append("⚠️ Ajustar la postura general para optimizar el recibo.")
-
-        if contacto_brazos:
-            resultados.append("✅ Contacto con el balón correcto.")
-        else:
-            resultados.append("⚠️ Ajustar posición de los brazos para mejorar contacto.")
-
-        if estabilidad:
-            resultados.append("✅ Postura estable al momento del contacto.")
-        else:
-            resultados.append("⚠️ Mejorar el balance y la posición de los pies.")
-
-        if not movimiento_excesivo:
-            resultados.append("✅ Movimiento controlado durante el recibo.")
-        else:
-            resultados.append("⚠️ Reducir movimientos innecesarios que pueden afectar el control.")
-
+        # Salida estructurada
         return {
-            "mensajes": resultados,
-            "datos": {
-                "angulo_tronco": angulo_tronco,
-                "profundidad_sentadilla": profundidad_sentadilla,
-                "posicion_correcta": posicion_correcta,
-                "contacto_brazos": contacto_brazos,
-                "estabilidad": estabilidad,
-                "movimiento_excesivo": movimiento_excesivo
-            }
+            "mensajes": mensajes,
+            "datos": [
+                angulo_tronco,
+                profundidad_sentadilla,
+                posicion_correcta,
+                contacto_brazos,
+                estabilidad,
+                not movimiento_excesivo,
+                distancia_pies
+            ]
         }
 
     except Exception as e:
         logging.error(f"Error en detectar_recibo: {e}", exc_info=True)
-        return {"mensajes": ["❌ Error en la detección del recibo"], "datos": {}}
+        return {
+            "mensajes": ["Error en la detección del recibo"],
+            "datos": [None, None, None, None, None, None, None]
+        }

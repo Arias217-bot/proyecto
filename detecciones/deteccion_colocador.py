@@ -1,22 +1,6 @@
-import cv2
-import mediapipe as mp
-import numpy as np
-import csv
 import math
 from mediapipe.python.solutions.pose import PoseLandmark
-from evaluaciones.evaluar_estabilidad import evaluar_estabilidad
-from evaluaciones.evaluar_contacto import evaluar_contacto
-
-# Inicializar el archivo CSV
-csv_file = open('analisis_postura.csv', mode='w', newline='')
-csv_writer = csv.writer(csv_file)
-csv_writer.writerow(['Frame', 'Angulo Codo Izq', 'Angulo Rodilla Izq', 'Angulo Tronco Izq', 'Mano Izq Sobre Frente',
-                     'Angulo Codo Der', 'Angulo Rodilla Der', 'Angulo Tronco Der', 'Mano Der Sobre Frente'])
-
-# Inicializar Mediapipe
-mp_pose = mp.solutions.pose
-mp_drawing = mp.solutions.drawing_utils
-pose = mp_pose.Pose()
+from evaluaciones import evaluar_estabilidad, evaluar_movimiento
 
 def calcular_angulo(a, b, c):
     """Calcula el ángulo entre tres puntos."""
@@ -27,43 +11,61 @@ def calcular_angulo(a, b, c):
         ba = [a[0] - b[0], a[1] - b[1]]
         bc = [c[0] - b[0], c[1] - b[1]]
         coseno_angulo = (ba[0] * bc[0] + ba[1] * bc[1]) / (math.sqrt(ba[0]**2 + ba[1]**2) * math.sqrt(bc[0]**2 + bc[1]**2))
-        angulo = math.acos(coseno_angulo)
+        angulo = math.acos(max(min(coseno_angulo, 1), -1))
         return math.degrees(angulo)
     except Exception as e:
         print(f"Error al calcular el ángulo: {e}")
         return None
 
-def verificar_landmark(landmark):
-    """Verifica si un landmark es confiable basado en su visibilidad."""
-    return hasattr(landmark, 'visibility') and landmark.visibility >= 0.5
-
 def detectar_colocador(landmarks):
-    """Detecta la postura del colocador basado en los puntos de referencia del cuerpo."""
+    """
+    Detecta la postura del colocador basado en los puntos de referencia del cuerpo.
+    Args:
+        landmarks (list): Lista de landmarks detectados por MediaPipe.
+    Returns:
+        dict: Resultados de la evaluación con mensajes y datos relevantes.
+    """
     try:
-        # Acceder a landmarks individuales (lado izquierdo)
-        hombro_izq = landmarks[PoseLandmark.LEFT_SHOULDER.value]
-        codo_izq = landmarks[PoseLandmark.LEFT_ELBOW.value]
-        muñeca_izq = landmarks[PoseLandmark.LEFT_WRIST.value]
-        cadera_izq = landmarks[PoseLandmark.LEFT_HIP.value]
-        rodilla_izq = landmarks[PoseLandmark.LEFT_KNEE.value]
-        tobillo_izq = landmarks[PoseLandmark.LEFT_ANKLE.value]
-        ceja_izq = landmarks[PoseLandmark.LEFT_EYE.value]
+        # Validar landmarks
+        required_landmarks = [
+            PoseLandmark.LEFT_SHOULDER.value, PoseLandmark.LEFT_ELBOW.value, PoseLandmark.LEFT_WRIST.value,
+            PoseLandmark.RIGHT_SHOULDER.value, PoseLandmark.RIGHT_ELBOW.value, PoseLandmark.RIGHT_WRIST.value,
+            PoseLandmark.LEFT_HIP.value, PoseLandmark.LEFT_KNEE.value, PoseLandmark.LEFT_ANKLE.value,
+            PoseLandmark.RIGHT_HIP.value, PoseLandmark.RIGHT_KNEE.value, PoseLandmark.RIGHT_ANKLE.value,
+            PoseLandmark.LEFT_EYE.value, PoseLandmark.RIGHT_EYE.value
+        ]
+        if not isinstance(landmarks, list) or not all(idx < len(landmarks) for idx in required_landmarks):
+            raise ValueError("Faltan landmarks esenciales para evaluar al colocador.")
 
-        # Acceder a landmarks individuales (lado derecho)
-        hombro_der = landmarks[PoseLandmark.RIGHT_SHOULDER.value]
-        codo_der = landmarks[PoseLandmark.RIGHT_ELBOW.value]
-        muñeca_der = landmarks[PoseLandmark.RIGHT_WRIST.value]
-        cadera_der = landmarks[PoseLandmark.RIGHT_HIP.value]
-        rodilla_der = landmarks[PoseLandmark.RIGHT_KNEE.value]
-        tobillo_der = landmarks[PoseLandmark.RIGHT_ANKLE.value]
+        # Acceder a landmarks individuales
+        hombro_izq, codo_izq, muñeca_izq = (
+            landmarks[PoseLandmark.LEFT_SHOULDER.value],
+            landmarks[PoseLandmark.LEFT_ELBOW.value],
+            landmarks[PoseLandmark.LEFT_WRIST.value]
+        )
+        hombro_der, codo_der, muñeca_der = (
+            landmarks[PoseLandmark.RIGHT_SHOULDER.value],
+            landmarks[PoseLandmark.RIGHT_ELBOW.value],
+            landmarks[PoseLandmark.RIGHT_WRIST.value]
+        )
+        cadera_izq, rodilla_izq, tobillo_izq = (
+            landmarks[PoseLandmark.LEFT_HIP.value],
+            landmarks[PoseLandmark.LEFT_KNEE.value],
+            landmarks[PoseLandmark.LEFT_ANKLE.value]
+        )
+        cadera_der, rodilla_der, tobillo_der = (
+            landmarks[PoseLandmark.RIGHT_HIP.value],
+            landmarks[PoseLandmark.RIGHT_KNEE.value],
+            landmarks[PoseLandmark.RIGHT_ANKLE.value]
+        )
+        ceja_izq = landmarks[PoseLandmark.LEFT_EYE.value]
         ceja_der = landmarks[PoseLandmark.RIGHT_EYE.value]
 
-        # Calcular ángulos (lado izquierdo)
+        # Calcular ángulos
         angulo_codo_izq = calcular_angulo(hombro_izq, codo_izq, muñeca_izq)
         angulo_rodilla_izq = calcular_angulo(cadera_izq, rodilla_izq, tobillo_izq)
         angulo_tronco_izq = calcular_angulo(hombro_izq, cadera_izq, rodilla_izq)
 
-        # Calcular ángulos (lado derecho)
         angulo_codo_der = calcular_angulo(hombro_der, codo_der, muñeca_der)
         angulo_rodilla_der = calcular_angulo(cadera_der, rodilla_der, tobillo_der)
         angulo_tronco_der = calcular_angulo(hombro_der, cadera_der, rodilla_der)
@@ -71,7 +73,7 @@ def detectar_colocador(landmarks):
         # Verificar si los ángulos son válidos
         if None in [angulo_codo_izq, angulo_rodilla_izq, angulo_tronco_izq,
                     angulo_codo_der, angulo_rodilla_der, angulo_tronco_der]:
-            return {"mensajes": ["❌ No se pudieron calcular algunos ángulos"], "datos": []}
+            return {"mensajes": ["No se pudieron calcular algunos ángulos"], "datos": [None] * 11}
 
         # Evaluar estabilidad del tronco
         estabilidad = evaluar_estabilidad(landmarks)
@@ -80,120 +82,32 @@ def detectar_colocador(landmarks):
         manos_sobre_frente_izq = muñeca_izq.y < ceja_izq.y
         manos_sobre_frente_der = muñeca_der.y < ceja_der.y
 
-        # Evaluación de la postura
-        resultados = []
+        # Evaluar movimiento controlado
+        movimiento_controlado = not evaluar_movimiento(landmarks)
 
-        # Evaluar codo izquierdo
-        if angulo_codo_izq < 90:
-            resultados.append('❌ Codo izquierdo muy cerrado')
-        elif angulo_codo_izq > 120:
-            resultados.append('❌ Codo izquierdo muy abierto')
-        else:
-            resultados.append('✅ Codo izquierdo correcto')
+        # Mensajes descriptivos
+        mensajes = [
+            f"Ángulo codo izquierdo: {angulo_codo_izq:.2f}°",
+            f"Ángulo codo derecho: {angulo_codo_der:.2f}°",
+            f"Estabilidad del tronco: {'Correcta' if estabilidad else 'Incorrecta'}",
+            f"Mano izquierda sobre la frente: {'Sí' if manos_sobre_frente_izq else 'No'}",
+            f"Mano derecha sobre la frente: {'Sí' if manos_sobre_frente_der else 'No'}",
+            f"Movimiento: {'Controlado' if movimiento_controlado else 'Excesivo'}"
+        ]
 
-        # Evaluar codo derecho
-        if angulo_codo_der < 90:
-            resultados.append('❌ Codo derecho muy cerrado')
-        elif angulo_codo_der > 120:
-            resultados.append('❌ Codo derecho muy abierto')
-        else:
-            resultados.append('✅ Codo derecho correcto')
-
-        # Evaluar rodilla izquierda
-        if 100 <= angulo_rodilla_izq <= 140:
-            resultados.append('✅ Rodilla izquierda correcta')
-        else:
-            resultados.append('❌ Ajustar rodilla izquierda')
-
-        # Evaluar rodilla derecha
-        if 100 <= angulo_rodilla_der <= 140:
-            resultados.append('✅ Rodilla derecha correcta')
-        else:
-            resultados.append('❌ Ajustar rodilla derecha')
-
-        # Evaluar estabilidad del tronco
-        if estabilidad:
-            resultados.append('✅ Tronco estable')
-        else:
-            resultados.append('❌ Ajustar estabilidad del tronco')
-
-        # Evaluar manos sobre la frente
-        if manos_sobre_frente_izq:
-            resultados.append('✅ Mano izquierda sobre la frente')
-        else:
-            resultados.append('❌ Mano izquierda no está sobre la frente')
-
-        if manos_sobre_frente_der:
-            resultados.append('✅ Mano derecha sobre la frente')
-        else:
-            resultados.append('❌ Mano derecha no está sobre la frente')
-
-        evaluacion = "\n".join(resultados)
+        # Salida estructurada
         return {
-            "mensajes": [evaluacion],
+            "mensajes": mensajes,
             "datos": [
                 angulo_codo_izq, angulo_rodilla_izq, angulo_tronco_izq, manos_sobre_frente_izq,
-                angulo_codo_der, angulo_rodilla_der, angulo_tronco_der, manos_sobre_frente_der
+                angulo_codo_der, angulo_rodilla_der, angulo_tronco_der, manos_sobre_frente_der,
+                estabilidad, movimiento_controlado
             ]
         }
 
     except Exception as e:
         print(f"Error en detectar_colocador: {e}")
-        return {"mensajes": ["❌ Error en la detección del colocador"], "datos": []}
-
-# Cargar el video
-cap = cv2.VideoCapture('HowToTimeAVolleyball.mp4')
-
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-# Inicializar grabación de video
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(cap.get(3)), int(cap.get(4))))
-
-while cap.isOpened():
-    ret, frame = cap.read()
-    if not ret:
-        break
-
-    # Convertir la imagen a RGB
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results = pose.process(frame_rgb)
-
-    if results.pose_landmarks:
-        # Dibujar los puntos clave del cuerpo
-        mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
-        
-        # Obtener los puntos clave
-        landmarks = results.pose_landmarks.landmark
-        
-        # Detectar colocador y obtener resultados
-        resultado = detectar_colocador(landmarks)
-        if resultado["datos"]:
-            csv_writer.writerow([cap.get(cv2.CAP_PROP_POS_FRAMES), *resultado["datos"]])
-        else:
-            print("❌ No se pudieron guardar los datos debido a errores en la detección.")
-
-        # Dibujar los resultados en la pantalla
-        y0, dy = 50, 30
-        for i, line in enumerate(resultado["mensajes"][0].split('\n')):
-            y = y0 + i * dy
-            color = (0, 255, 0) if '✅' in line else (0, 0, 255)
-            cv2.putText(frame, line, (50, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
-    
-    # Mostrar el video con la detección y los ángulos
-    cv2.imshow('Evaluación de Postura - Colocador', frame)
-    
-    # Grabar el video
-    out.write(frame)
-    
-    # Salir con la tecla 'q'
-    if cv2.waitKey(10) & 0xFF == ord('q'):
-        break
-
-cap.release()
-out.release()
-cv2.destroyAllWindows()
-
-# Al final del programa
-csv_file.close()
+        return {
+            "mensajes": ["Error en la detección del colocador"],
+            "datos": [None] * 11
+        }
