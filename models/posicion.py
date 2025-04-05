@@ -6,3 +6,4 @@ class Posicion(EntidadBase):
 
     id_posicion = db.Column(db.Integer, primary_key=True, nullable=False)
     nombre = db.Column(db.String(100), nullable=False)
+    descripcion = db.Column(db.String(250), nullable=False)

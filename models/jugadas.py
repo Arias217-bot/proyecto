@@ -5,8 +5,8 @@ from models.entidad_base import EntidadBase
 class Jugadas(EntidadBase):
     __tablename__ = 'jugadas'
 
-    id_jugada = db.Column(db.Integer, primary_key=True)
-    id_partido = db.Column(db.Integer, nullable=False)
+    id_jugada = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nombre_partido = db.Column(db.String(50), nullable=False)
     secuencia_jugada = db.Column(db.Text)
 
     # tiempo_inicio y tiempo_fin como columnas de tipo Time, necesario para su uso desde la 12 a la 30

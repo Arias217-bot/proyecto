@@ -15,7 +15,10 @@ class Usuario(EntidadBase):
     direccion = db.Column(db.String(255))
     email = db.Column(db.String(100), unique=True)
     experiencia = db.Column(db.Text)
-    foto = db.Column(db.String(255))
+    foto_url = db.Column(db.String(255))
+    id_tipo_usuario = db.Column(db.Integer)
+    peso = db.Column(db.Numeric(5, 2))
+    altura = db.Column(db.Numeric(5, 2))
 
     def set_password(self, password):
         """Hashea la contraseña antes de guardarla."""

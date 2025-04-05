@@ -42,6 +42,9 @@
           <div class="mb-3">
             <input type="text" id="nombreCategoria" name="nombre" class="form-control" placeholder="Escribe el nombre de la categoría" required>
           </div>
+          <div class="mb-3">
+            <input type="text" id="descripcionCategoria" name="descripcion" class="form-control" placeholder="Escribe la descripcion de la categoría" required>
+          </div>
           <button id="crearCategoria" type="button" class="btn btn-primary">Crear</button>
         </form>
       </div>
@@ -53,8 +56,9 @@
         <div class="border p-3 mb-3 rounded bg-white">
           <div class="mb-2"><strong>Id:</strong> {{ categoria_edad.id_categoria_edad }}</div>
           <div class="mb-2"><strong>Nombre:</strong> {{ categoria_edad.nombre }}</div>
+          <div class="mb-2"><strong>Descripcion:</strong> {{ categoria_edad.descripcion }}</div>
           <div class="d-flex gap-2">
-            <button class="btn btn-warning btn-sm editar-categoria" data-id="{{ categoria_edad.id_categoria_edad }}" data-nombre="{{ categoria_edad.nombre }}">✏️ Editar</button>
+            <button class="btn btn-warning btn-sm editar-categoria" data-id="{{ categoria_edad.id_categoria_edad }}" data-nombre="{{ categoria_edad.nombre }}" data-descripcion="{{ categoria_edad.descripcion }}">✏️ Editar</button>
             <form method="POST" action="{{ url_for('categoria_edad.delete', id=categoria_edad.id_categoria_edad) }}" onsubmit="return confirmarEliminacion()">
                 <button type="button" class="btn btn-danger btn-sm eliminar-categoria" data-id="{{ categoria_edad.id_categoria_edad }}">
                     🗑️ Eliminar
@@ -63,6 +67,7 @@
           </div>
           <div class="editar-formulario d-none mt-3" id="formulario-{{ categoria_edad.id_categoria_edad }}">
             <input type="text" id="nombreCategoria-{{ categoria_edad.id_categoria_edad }}" class="form-control mb-2" value="{{ categoria_edad.nombre }}">
+            <input type="text" id="descripcionCategoria-{{ categoria_edad.id_categoria_edad }}" class="form-control mb-2" value="{{ categoria_edad.descripcion }}">
             <button class="btn btn-primary btn-sm guardar-categoria" data-id="{{ categoria_edad.id_categoria_edad }}">Guardar</button>
             <button class="btn btn-secondary btn-sm cancelar-edicion" data-id="{{ categoria_edad.id_categoria_edad }}">Cancelar</button>
           </div>
@@ -76,6 +81,7 @@
   <script>
   document.getElementById("crearCategoria").addEventListener("click", function () {
     const nombreCategoria = document.getElementById("nombreCategoria").value;
+    const descripcionCategoria = document.getElementById("descripcionCategoria").value;
 
     if (!nombreCategoria.trim()) {
       alert("El nombre de la categoría no puede estar vacío.");
@@ -85,7 +91,7 @@
     fetch("/categoria_edad", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre: nombreCategoria })
+      body: JSON.stringify({ nombre: nombreCategoria, descripcion: descripcionCategoria })
     })
     .then(response => {
       if (response.ok) {
@@ -115,11 +121,12 @@
       button.addEventListener("click", function () {
         const categoriaId = this.getAttribute("data-id");
         const inputNombre = document.getElementById(`nombreCategoria-${categoriaId}`).value;
+        const inputDescripcion = document.getElementById(`descripcionCategoria-${categoriaId}`).value;
 
         fetch(`/categoria_edad/${categoriaId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ "nombre": inputNombre })
+          body: JSON.stringify({ "nombre": inputNombre, "descripcion": inputDescripcion })
         })
         .then(response => response.json())
         .then(data => {

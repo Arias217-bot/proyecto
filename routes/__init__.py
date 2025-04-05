@@ -5,6 +5,19 @@ from .categoria_edad_routes import categoria_edad_bp
 from .categoria_sexo_routes import categoria_sexo_bp
 from .jugadas_routes import jugadas_bp
 from .rol_routes import rol_bp
+from .posicion_routes import posicion_bp
+from .detalle_jugada_routes import detalle_jugada_bp
+from .torneo_routes import torneo_bp
+from .equipo_rival_routes import equipo_rival_bp
 
 # Definir los blueprints aquí para importarlos fácilmente
-blueprints = [usuario_bp, equipo_bp, categoria_edad_bp, categoria_sexo_bp, jugadas_bp, rol_bp]
+blueprints = [usuario_bp, 
+              equipo_bp, 
+              categoria_edad_bp, 
+              categoria_sexo_bp, 
+              jugadas_bp, 
+              rol_bp, 
+              posicion_bp, 
+              detalle_jugada_bp,
+              torneo_bp,
+              equipo_rival_bp]

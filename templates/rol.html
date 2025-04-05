@@ -122,11 +122,12 @@
       button.addEventListener("click", function () {
         const rolId = this.getAttribute("data-id");
         const inputNombre = document.getElementById(`nombreRol-${rolId}`).value;
+        const inputDescripcion = document.getElementById(`descripcionRol-${rolId}`).value;
 
         fetch(`/rol/${rolId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ "nombre": inputNombre })
+          body: JSON.stringify({ "nombre": inputNombre, "descripcion": inputDescripcion })
         })
         .then(response => response.json())
         .then(data => {

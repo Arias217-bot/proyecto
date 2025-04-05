@@ -3,6 +3,8 @@ from routes.entidad_routes import EntidadRoutes
 
 from models.usuario import Usuario
 from models.equipo import Equipo
+from models.rol import Rol
+from models.posicion import Posicion
 from models.categoria_edad import CategoriaEdad
 from models.categoria_sexo import CategoriaSexo
 from models.usuario_equipo import Usuario_Equipo
@@ -37,5 +39,54 @@ def perfil_equipos(documento):
         equipos=[e.to_dict() for e in equipos],  # Solo equipos donde está el usuario
         categorias_edad=categorias_edad,
         categorias_sexo=categorias_sexo,
+        documento=documento
+    )
+
+@equipo_bp.route('/<int:id_equipo>/<nombre_equipo>')
+def detalle_equipo(documento, id_equipo, nombre_equipo):
+    usuario = db.session.get(Usuario, documento)
+    if not usuario:
+        return "Usuario no encontrado", 404
+
+    equipo = db.session.get(Equipo, id_equipo)
+    if not equipo or equipo.nombre.replace(" ", "-").lower() != nombre_equipo:
+        return "Equipo no encontrado", 404
+
+    # Obtener los nombres de las categorías
+    categoria_edad = db.session.get(CategoriaEdad, equipo.id_categoria_edad)
+    categoria_sexo = db.session.get(CategoriaSexo, equipo.id_categoria_sexo)
+
+    # Obtener los integrantes del equipo
+    integrantes = (
+        db.session.query(Usuario, Rol, Posicion)
+        .join(Usuario_Equipo, Usuario.documento == Usuario_Equipo.documento)
+        .outerjoin(Rol, Usuario_Equipo.id_rol == Rol.id_rol)
+        .outerjoin(Posicion, Usuario_Equipo.id_posicion == Posicion.id_posicion)
+        .filter(Usuario_Equipo.id_equipo == id_equipo)
+        .all()
+    )
+
+    integrantes_lista = [
+        {
+            "documento": usuario.documento,
+            "nombre": usuario.nombre,
+            "rol": rol.nombre if rol else "Sin rol",
+            "posicion": posicion.nombre if posicion else "Sin posición"
+        }
+        for usuario, rol, posicion in integrantes
+    ]
+
+    equipo_detalle = {
+        "nombre": equipo.nombre,
+        "descripcion": equipo.descripcion,
+        "categoria_edad": categoria_edad.nombre if categoria_edad else "Sin categoría",
+        "categoria_sexo": categoria_sexo.nombre if categoria_sexo else "Sin categoría"
+    }
+
+    return render_template(
+        'detalle_equipo.html',
+        usuario=usuario,
+        equipo=equipo_detalle,
+        integrantes=integrantes_lista,
         documento=documento
     )
