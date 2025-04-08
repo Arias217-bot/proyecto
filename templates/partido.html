@@ -24,8 +24,8 @@
 <body>
   <div class="card-container">
     <div class="mb-4">
-      <form method="GET" action="{{ url_for('categoria_sexo.categoria_sexo_page') }}" class="d-flex">
-        <input type="text" name="q" class="form-control me-2" placeholder="Buscar categoría..." value="{{ q }}">
+      <form method="GET" action="{{ url_for('partido.partido') }}" class="d-flex"></form>
+        <input type="text" name="q" class="form-control me-2" placeholder="Buscar partido" value="{{ q }}">
         <button type="submit" class="btn btn-outline-primary">Buscar</button>
       </form>
     </div>
@@ -56,8 +56,7 @@
           <div class="d-flex gap-2">
             <button class="btn btn-warning btn-sm editar-categoria" data-id="{{ categoria_sexo.id_categoria_sexo }}" data-nombre="{{ categoria_sexo.nombre }}">✏️ Editar</button>
             <form method="POST" action="{{ url_for('categoria_sexo.delete', id=categoria_sexo.id_categoria_sexo) }}" onsubmit="return confirmarEliminacion()">
-                <button type="button" class="btn btn-danger btn-sm eliminar-categoria" data-id="{{ categoria_sexo.id_categoria_sexo }}">
-                    🗑️ Eliminar
+                <button type="button" class="btn btn-danger btn-sm eliminar-categoria" data-id="{{ categoria_sexo.id_categoria_sexo }}"> Eliminar
                   </button>
             </form>
           </div>
@@ -72,7 +71,6 @@
       {% endfor %}
     </div>
   </div>
-
   <script>
     document.getElementById("crearCategoria").addEventListener("click", function () {
       const nombreCategoria = document.getElementById("nombreCategoria").value;

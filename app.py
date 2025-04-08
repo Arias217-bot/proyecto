@@ -26,7 +26,7 @@ for bp in blueprints:
     elif bp.name == "equipo_bp":
         app.register_blueprint(bp, url_prefix='/equipos')
     elif bp.name == "partido_bp":
-        app.register_blueprint(bp, url_prefix='/partidos')
+        app.register_blueprint(bp, url_prefix='/partido')
 
 # Rutas
 @app.route('/login', methods=['GET', 'POST'])
@@ -69,6 +69,15 @@ def profile_page(documento):
     if not usuario:
         return "Usuario no encontrado", 404
     return render_template('profile.html', usuario=usuario)
+
+@app.route('/partido')
+def partido():
+    return render_template('partido.html')
+
+#home page
+@app.route('/')
+def home():
+    return render_template('base.html')
 
 # Manejo de errores
 @app.errorhandler(404)
