@@ -8,8 +8,8 @@ from models.partido import Partido
 equipo_routes = EntidadRoutes('partido', Partido)
 equipo_bp = equipo_routes.bp  # El Blueprint que usaremos en `app.py`
 
-@equipo_bp.route('/ver', methods=['GET'])
-def partido_page():
+@equipo_bp.route('/partido', methods=['GET'])
+def partido():
 
     query = request.args.get('q','')
     if query:
