@@ -20,7 +20,7 @@
     <ul class="list-group my-4">
         {% for equipo in equipos %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                <a href="{{ url_for('detalle_equipo', documento=documento, id_equipo=equipo.id_equipo, nombre_equipo=equipo.nombre.replace(' ', '-').lower()) }}" class="text-decoration-none">
+                <a href="{{ url_for('equipo_bp.detalle_equipo', documento=documento, nombre_equipo=equipo.nombre.replace(' ', '-').lower()) }}">
                     {{ equipo.nombre }}
                 </a>
                 <span class="badge bg-primary">{{ equipo.descripcion }}</span>

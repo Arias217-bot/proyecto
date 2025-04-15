@@ -1,3 +1,4 @@
+# models/usuario_equipo.py
 from config import db
 from models.entidad_base import EntidadBase
 
@@ -8,6 +9,7 @@ class Usuario_Equipo(EntidadBase):
     documento = db.Column(db.String(20), db.ForeignKey('usuario.documento'), primary_key=True, nullable=False)
     id_rol = db.Column(db.Integer, db.ForeignKey('rol.id_rol'), nullable=False)
     id_posicion = db.Column(db.Integer, db.ForeignKey('posicion.id_posicion'), nullable=False)
+    numero = db.Column(db.Integer, nullable=False)
 
     equipo = db.relationship('Equipo', backref=db.backref('usuarios_equipo', cascade='all, delete-orphan'))
     usuario = db.relationship('Usuario', backref=db.backref('equipos', cascade='all, delete-orphan'))

@@ -42,27 +42,39 @@ def perfil_equipos(documento):
         documento=documento
     )
 
-@equipo_bp.route('/<int:id_equipo>/<nombre_equipo>')
-def detalle_equipo(documento, id_equipo, nombre_equipo):
+@equipo_bp.route('/<documento>/<nombre_equipo>')
+def detalle_equipo(documento, nombre_equipo):
     usuario = db.session.get(Usuario, documento)
     if not usuario:
         return "Usuario no encontrado", 404
 
-    equipo = db.session.get(Equipo, id_equipo)
-    if not equipo or equipo.nombre.replace(" ", "-").lower() != nombre_equipo:
+    # Obtener todos los equipos del usuario
+    equipos = (
+        db.session.query(Equipo)
+        .join(Usuario_Equipo, Usuario_Equipo.id_equipo == Equipo.id_equipo)
+        .filter(Usuario_Equipo.documento == documento)
+        .all()
+    )
+
+    # Buscar por nombre formateado
+    equipo = next(
+        (e for e in equipos if e.nombre.replace(" ", "-").lower() == nombre_equipo),
+        None
+    )
+    if not equipo:
         return "Equipo no encontrado", 404
 
-    # Obtener los nombres de las categorías
+    # Obtener categorías
     categoria_edad = db.session.get(CategoriaEdad, equipo.id_categoria_edad)
     categoria_sexo = db.session.get(CategoriaSexo, equipo.id_categoria_sexo)
 
-    # Obtener los integrantes del equipo
+    # Obtener integrantes
     integrantes = (
         db.session.query(Usuario, Rol, Posicion)
         .join(Usuario_Equipo, Usuario.documento == Usuario_Equipo.documento)
         .outerjoin(Rol, Usuario_Equipo.id_rol == Rol.id_rol)
         .outerjoin(Posicion, Usuario_Equipo.id_posicion == Posicion.id_posicion)
-        .filter(Usuario_Equipo.id_equipo == id_equipo)
+        .filter(Usuario_Equipo.id_equipo == equipo.id_equipo)
         .all()
     )
 

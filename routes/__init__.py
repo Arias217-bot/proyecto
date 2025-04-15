@@ -9,6 +9,8 @@ from .posicion_routes import posicion_bp
 from .detalle_jugada_routes import detalle_jugada_bp
 from .torneo_routes import torneo_bp
 from .equipo_rival_routes import equipo_rival_bp
+from .jugadores_rivales_routes import jugadores_rivales_bp
+from .mensajes_routes import mensajes_bp
 
 # Definir los blueprints aquí para importarlos fácilmente
 blueprints = [usuario_bp, 
@@ -20,4 +22,6 @@ blueprints = [usuario_bp,
               posicion_bp, 
               detalle_jugada_bp,
               torneo_bp,
-              equipo_rival_bp]
+              equipo_rival_bp,
+              jugadores_rivales_bp,
+              mensajes_bp]
