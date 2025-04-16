@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mensajes</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      min-height: 100vh;
+      background-color: #f8f9fa;
+      padding: 1rem;
+    }
+    .card-container {
+      max-width: 700px;
+      margin: auto;
+    }
+    .card-list {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="card-container">
+    <div class="mb-4">
+      <form method="GET" action="{{ url_for('mensajes.mensajes_page') }}" class="d-flex">
+        <input type="text" name="q" class="form-control me-2" placeholder="Buscar mensaje..." value="{{ q }}">
+        <button type="submit" class="btn btn-outline-primary">Buscar</button>
+      </form>
+    </div>
+
+    <div class="text-center mb-3">
+      <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#formPanel" aria-expanded="false" aria-controls="formPanel">
+        ➕ Crear Nuevo Mensaje
+      </button>
+    </div>
+
+    <div class="collapse mb-4" id="formPanel">
+      <div class="card card-body">
+        <form id="crearMensajeForm">
+          <div class="mb-3">
+            <input type="number" id="idEquipo" name="id_equipo" class="form-control" placeholder="ID del equipo" required>
+          </div>
+          <div class="mb-3">
+            <textarea id="contenidoMensaje" name="contenido" class="form-control" placeholder="Contenido del mensaje" rows="3" required></textarea>
+          </div>
+          <div class="mb-3">
+            <input type="text" id="autorMensaje" name="autor" class="form-control" placeholder="Autor del mensaje">
+          </div>
+          <button id="crearMensaje" type="button" class="btn btn-primary">Crear</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card shadow-lg p-4 rounded-4 card-list">
+      <h2 class="text-center mb-4">Mensajes</h2>
+      {% for mensaje in mensajes_lista %}
+        <div class="border p-3 mb-3 rounded bg-white">
+          <div class="mb-2"><strong>ID Mensaje:</strong> {{ mensaje.id_mensaje }}</div>
+          <div class="mb-2"><strong>ID Equipo:</strong> {{ mensaje.id_equipo }}</div>
+          <div class="mb-2"><strong>Contenido:</strong> {{ mensaje.contenido }}</div>
+          <div class="mb-2"><strong>Autor:</strong> {{ mensaje.autor }}</div>
+          <div class="mb-2"><strong>Fecha de Envío:</strong> {{ mensaje.fecha_envio }}</div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-warning btn-sm editar-mensaje" data-id="{{ mensaje.id_mensaje }}" data-id-equipo="{{ mensaje.id_equipo }}" data-contenido="{{ mensaje.contenido }}" data-autor="{{ mensaje.autor }}">✏️ Editar</button>
+            <form method="POST" action="{{ url_for('mensajes.delete', id=mensaje.id_mensaje) }}" onsubmit="return confirmarEliminacion()">
+              <button type="button" class="btn btn-danger btn-sm eliminar-mensaje" data-id="{{ mensaje.id_mensaje }}">🗑️ Eliminar</button>
+            </form>
+          </div>
+          <div class="editar-formulario d-none mt-3" id="formulario-{{ mensaje.id_mensaje }}">
+            <input type="number" id="idEquipo-{{ mensaje.id_mensaje }}" class="form-control mb-2" value="{{ mensaje.id_equipo }}">
+            <textarea id="contenidoMensaje-{{ mensaje.id_mensaje }}" class="form-control mb-2" rows="3">{{ mensaje.contenido }}</textarea>
+            <input type="text" id="autorMensaje-{{ mensaje.id_mensaje }}" class="form-control mb-2" value="{{ mensaje.autor }}">
+            <button class="btn btn-primary btn-sm guardar-mensaje" data-id="{{ mensaje.id_mensaje }}">Guardar</button>
+            <button class="btn btn-secondary btn-sm cancelar-edicion" data-id="{{ mensaje.id_mensaje }}">Cancelar</button>
+          </div>
+        </div>
+      {% else %}
+        <p class="text-center">No se encontraron mensajes</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("crearMensaje").addEventListener("click", function () {
+      const idEquipo = document.getElementById("idEquipo").value;
+      const contenido = document.getElementById("contenidoMensaje").value;
+      const autor = document.getElementById("autorMensaje").value;
+
+      if (!idEquipo.trim() || !contenido.trim()) {
+        alert("El ID del equipo y el contenido del mensaje son obligatorios.");
+        return;
+      }
+
+      fetch("/mensajes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_equipo: idEquipo, contenido, autor })
+      })
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error("Error al crear el mensaje.");
+        }
+      })
+      .then(data => {
+        console.log("Mensaje creado:", data);
+        window.location.reload();
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        alert("Hubo un problema al crear el mensaje.");
+      });
+    });
+
+    document.querySelectorAll(".editar-mensaje").forEach(button => {
+      button.addEventListener("click", function () {
+        const mensajeId = this.getAttribute("data-id");
+        document.getElementById(`formulario-${mensajeId}`).classList.toggle("d-none");
+      });
+    });
+
+    document.querySelectorAll(".guardar-mensaje").forEach(button => {
+      button.addEventListener("click", function () {
+        const mensajeId = this.getAttribute("data-id");
+        const idEquipo = document.getElementById(`idEquipo-${mensajeId}`).value;
+        const contenido = document.getElementById(`contenidoMensaje-${mensajeId}`).value;
+        const autor = document.getElementById(`autorMensaje-${mensajeId}`).value;
+
+        fetch(`/mensajes/${mensajeId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_equipo: idEquipo, contenido, autor })
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log("Mensaje actualizado:", data);
+          window.location.reload();
+        })
+        .catch(error => console.error("Error:", error));
+      });
+    });
+
+    document.querySelectorAll(".cancelar-edicion").forEach(button => {
+      button.addEventListener("click", function () {
+        const mensajeId = this.getAttribute("data-id");
+        document.getElementById(`formulario-${mensajeId}`).classList.add("d-none");
+      });
+    });
+
+    function confirmarEliminacion() {
+      return confirm("¿Estás seguro de que quieres eliminar este mensaje?");
+    }
+
+    document.querySelectorAll(".eliminar-mensaje").forEach(button => {
+      button.addEventListener("click", function () {
+        const mensajeId = this.getAttribute("data-id");
+        if (!confirm("¿Estás seguro de que quieres eliminar este mensaje?")) {
+          return;
+        }
+
+        fetch(`/mensajes/${mensajeId}`, {
+          method: "DELETE"
+        })
+        .then(response => {
+          if (response.ok) {
+            window.location.reload();
+          } else {
+            alert("Error al eliminar el mensaje");
+          }
+        })
+        .catch(error => console.error("Error:", error));
+      });
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

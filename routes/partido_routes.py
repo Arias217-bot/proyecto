@@ -1,3 +1,4 @@
+# routes/partido_routes.py
 from routes.entidad_routes import EntidadRoutes
 from flask import render_template, request
 from config import db
@@ -5,8 +6,8 @@ from config import db
 from models.partido import Partido
 
 # Blueprints
-equipo_routes = EntidadRoutes('partido', Partido)
-equipo_bp = equipo_routes.bp  # El Blueprint que usaremos en `app.py`
+partido_routes = EntidadRoutes('partido', Partido)
+partido_bp = partido_routes.bp  # El Blueprint que usaremos en `app.py`
 
 @equipo_bp.route('/partido', methods=['GET'])
 def partido():
@@ -18,4 +19,4 @@ def partido():
         ).all()
     else:
         partidos_lista = db.session.query(Partido).all()
-    return render_template('partido.html', partidos=partidos_lista,q=query) 
+    return render_template('partido.html', partidos=partidos_lista,q=query)
