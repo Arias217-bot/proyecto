@@ -155,15 +155,26 @@ def procesar_video(video_path, deteccion_func, deteccion, output_path):
         cap.release()
         out.release()
 
-def procesar_video_camara(deteccion_func):
-    """Procesa el video en tiempo real desde la cámara."""
+def procesar_video_camara(deteccion_func, deteccion):
+    """Procesa el video en tiempo real desde la cámara y guarda resultados."""
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("No se pudo acceder a la cámara.")
         return
 
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = 20  # Estimado para cámara en vivo
+
+    os.makedirs("Salidas", exist_ok=True)
+    nombre_archivo = f"camara_{deteccion}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.avi"
+    output_path = os.path.join("Salidas", nombre_archivo)
+
+    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'XVID'), fps, (frame_width, frame_height))
     pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+    
     frame_number = 0
+    datos_resultados = []
 
     try:
         while cap.isOpened():
@@ -171,23 +182,32 @@ def procesar_video_camara(deteccion_func):
             if not ret:
                 break
 
-            # Procesar el frame
             frame, evaluacion_resultados = procesar_frame(frame, pose, deteccion_func, frame_number)
 
-            # Mostrar los resultados en pantalla
+            # Mostrar el video
             cv2.imshow("Detección en Tiempo Real", frame)
 
-            # Salir con la tecla 'q'
+            # Guardar el frame
+            out.write(frame)
+
+            # Guardar datos
+            datos_resultados.append([frame_number, *evaluacion_resultados["datos"]])
+
+            # Salir con 'q'
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
             frame_number += 1
 
+        print(f"Video guardado en: {output_path}")
+        guardar_resultados_csv(datos_resultados, output_path, deteccion)
     except Exception as e:
         logging.error(f"Error en el procesamiento de la cámara: {e}")
     finally:
         cap.release()
+        out.release()
         cv2.destroyAllWindows()
+
 
 def seleccionar_deteccion():
     """Muestra una ventana para seleccionar la detección deseada."""
@@ -271,10 +291,11 @@ def iniciar_procesamiento():
         if not video_path:
             print("No se seleccionó ningún archivo de video. Saliendo...")
             return
-        output_path = os.path.join("Salidas", f"{deteccion}_procesado.avi")
+        nombre_video = os.path.splitext(os.path.basename(video_path))[0]
+        output_path = os.path.join("Salidas", f"{deteccion}_{nombre_video}_procesado.mp4")
         procesar_video(video_path, deteccion_func, deteccion, output_path)
     elif fuente == "camara":
-        procesar_video_camara(deteccion_func)
+        procesar_video_camara(deteccion_func, deteccion)
     else:
         print("No se seleccionó ninguna fuente de video. Saliendo...")
 
