@@ -1,3 +1,4 @@
+# routes/entidad_routes.py
 from flask import Blueprint, jsonify, request
 from config import db
 
@@ -58,3 +59,4 @@ class EntidadRoutes:
         db.session.delete(registro)
         db.session.commit()
         return jsonify({"mensaje": f"{self.modelo.__name__} eliminado"}), 200
+
