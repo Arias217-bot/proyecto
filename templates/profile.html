@@ -30,6 +30,7 @@
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
                             <input type="email" class="form-control" id="email" name="email" value="{{ usuario.email }}" required disabled>
+
                         </div>
                         <div class="mb-3">
                             <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
@@ -50,6 +51,35 @@
                             <label for="direccion" class="form-label">Dirección</label>
                             <input type="text" class="form-control" id="direccion" name="direccion" value="{{ usuario.direccion }}" disabled>
                         </div>
+
+                    </div>
+                    <div class="mb-3">
+                        <label for="peso" class="form-label">Peso</label>
+                        <input type="text" class="form-control" id="peso" name="peso" value="{{ usuario.peso }}" disabled>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="altura" class="form-label">altura</label>
+                    <input type="text" class="form-control" id="altura" name="altura" value="{{ usuario.altura }}" disabled>
+                </div>
+                <div class="mb-3">
+                    <label for="brado" class="form-label">Brazo Dominante</label>
+                    <select class="form-control" id="brado" name="brado" disabled>
+                        <option value="Derecho" {% if usuario.brado == 'Derecho' %}selected{% endif %}>Derecho</option>
+                        <option value="Izquierdo" {% if usuario.brado == 'Izquierdo' %}selected{% endif %}>Izquierdo</option>
+                        <option value="Ambidiestro" {% if usuario.brado == 'Ambidiestro' %}selected{% endif %}>Ambidiestro</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="perfil" class="form-label">Icono jugador</label>
+                    <input type="file" class="form-control" id="img" name="img" accept=".png, .jpg, .jpeg" disabled>
+                    
+                </div>
+                <div class="mb-3">
+                            <label for="experiencia" class="form-label">Experiencia</label>
+                            <textarea class="form-control" id="experiencia" name="experiencia" disabled>{{ usuario.experiencia }}</textarea>
+                        </div>
+
                         <div class="mb-3">
                             <label for="experiencia" class="form-label">Experiencia</label>
                             <textarea class="form-control" id="experiencia" name="experiencia" disabled>{{ usuario.experiencia }}</textarea>
