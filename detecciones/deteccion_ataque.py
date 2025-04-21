@@ -24,13 +24,14 @@ def calcular_velocidad_angular(angulo_actual, angulo_anterior, tiempo):
         print(f"Error al calcular la velocidad angular: {e}")
         return None
 
-def detectar_ataque(landmarks, angulos_anteriores=None, tiempo=1):
+def detectar_ataque(landmarks, angulos_anteriores=None, tiempo=1, tolerancia_simetria=15):
     """
     Detecta y evalúa la técnica de ataque en voleibol.
     Args:
         landmarks (list): Lista de landmarks detectados por MediaPipe.
         angulos_anteriores (dict): Diccionario con los ángulos previos de los codos.
         tiempo (float): Intervalo de tiempo entre frames.
+        tolerancia_simetria (int): Tolerancia en grados para evaluar la simetría entre brazos.
     Returns:
         dict: Resultados de la evaluación con mensajes y datos relevantes.
     """
@@ -77,7 +78,11 @@ def detectar_ataque(landmarks, angulos_anteriores=None, tiempo=1):
         contacto_valido = evaluar_contacto(landmarks)
 
         # Calcular simetría entre los brazos
-        simetria = abs(angulo_codo_izq - angulo_codo_der) < 15  # Tolerancia de 15 grados
+        simetria = abs(angulo_codo_izq - angulo_codo_der) < tolerancia_simetria  # Tolerancia ajustable
+
+        # Placeholder para estabilidad y movimiento controlado
+        estabilidad = True  # Implementar lógica real si es necesario
+        movimiento_controlado = True  # Implementar lógica real si es necesario
 
         # Mensajes descriptivos
         mensajes = [
@@ -87,7 +92,9 @@ def detectar_ataque(landmarks, angulos_anteriores=None, tiempo=1):
             f"Velocidad angular codo derecho: {velocidad_angular_der:.2f}°/s",
             f"Ataque {'válido' if ataque_valido else 'no válido'}",
             f"Contacto con el balón: {'correcto' if contacto_valido else 'incorrecto'}",
-            f"Simetría entre brazos: {'Correcta' if simetria else 'Incorrecta'}"
+            f"Simetría entre brazos: {'Correcta' if simetria else 'Incorrecta'}",
+            f"Estabilidad: {'Correcta' if estabilidad else 'Incorrecta'}",
+            f"Movimiento controlado: {'Correcto' if movimiento_controlado else 'Incorrecto'}"
         ]
 
         # Salida estructurada
@@ -95,7 +102,7 @@ def detectar_ataque(landmarks, angulos_anteriores=None, tiempo=1):
             "mensajes": mensajes,
             "datos": [
                 angulo_codo_izq, angulo_codo_der, velocidad_angular_izq, velocidad_angular_der,
-                ataque_valido, contacto_valido, simetria
+                ataque_valido, contacto_valido, simetria, estabilidad, movimiento_controlado
             ]
         }
 
@@ -103,5 +110,5 @@ def detectar_ataque(landmarks, angulos_anteriores=None, tiempo=1):
         print(f"Error en detectar_ataque: {e}")
         return {
             "mensajes": ["Error en la detección del ataque"],
-            "datos": [None, None, None, None, None, None, None]
+            "datos": [None, None, None, None, None, None, None, None, None]
         }

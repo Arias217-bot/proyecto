@@ -6,7 +6,7 @@ def calcular_angulo(p1, p2, p3):
     """Calcula el ángulo entre tres puntos."""
     try:
         angulo = math.degrees(
-            math.atan2(p3.y - p2.y, p3.x - p2.x) -
+            math.atan2(p3.y - p2.y, p3.x - p2.x) - 
             math.atan2(p1.y - p2.y, p1.x - p2.x)
         )
         return abs(angulo) if angulo >= 0 else abs(angulo + 360)
@@ -37,7 +37,7 @@ def detectar_saque(landmarks):
         codo = landmarks[PoseLandmark.RIGHT_ELBOW.value]
         muñeca = landmarks[PoseLandmark.RIGHT_WRIST.value]
 
-        # Validar altura inicial del brazo (muñeca debe estar por encima del hombro)
+        # Validar altura inicial del brazo: la muñeca debe estar por encima del hombro
         altura_brazo_correcta = muñeca.y < hombro.y
 
         # Calcular ángulo del codo
@@ -45,7 +45,7 @@ def detectar_saque(landmarks):
         if angulo_codo is None:
             raise ValueError("No se pudo calcular el ángulo del codo.")
 
-        # Evaluar alineación del brazo (hombro, codo y muñeca deben estar alineados)
+        # Evaluar alineación: hombro, codo y muñeca deben estar alineados en x (umbral de 0.1)
         alineacion_hombro = abs(hombro.x - codo.x) < 0.1
         alineacion_codo = abs(codo.x - muñeca.x) < 0.1
 
@@ -55,7 +55,7 @@ def detectar_saque(landmarks):
         # Evaluar estabilidad del tronco
         estabilidad = evaluar_estabilidad(landmarks)
 
-        # Evaluar si el saque es válido
+        # Evaluar si el saque es válido: se esperan condiciones correctas en todos los parámetros
         saque_valido = angulo_codo > 90 and altura_brazo_correcta and alineacion_hombro and alineacion_codo and contacto_valido
 
         # Mensajes descriptivos
@@ -73,7 +73,7 @@ def detectar_saque(landmarks):
         return {
             "mensajes": mensajes,
             "datos": [
-                angulo_codo, altura_brazo_correcta, alineacion_hombro,
+                angulo_codo, altura_brazo_correcta, alineacion_hombro, 
                 alineacion_codo, contacto_valido, estabilidad, saque_valido
             ]
         }

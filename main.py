@@ -19,6 +19,10 @@ from detecciones import (
     detectar_bloqueo
 )
 
+# Importar la función de detección multi-persona
+from multi_person_detector import run_multiperson_detection
+from models.classify_pose import classify_pose
+
 # Configurar logging para errores
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(filename="logs/errores.log", level=logging.ERROR, format="%(asctime)s - %(message)s")
@@ -55,6 +59,8 @@ def procesar_frame(frame, pose, deteccion_func, frame_number):
         logging.error(f"Error procesando frame: {e}")
         return frame, {"mensajes": ["Error en la evaluación"], "datos": []}
 
+from utils.config import CSV_HEADERS  # Asegúrate de tener este import si usas el archivo separado
+
 def guardar_resultados_csv(datos, path_video, deteccion):
     """Guarda los datos de evaluación en un archivo CSV dentro de la carpeta Salidas/"""
     carpeta_salida = "Salidas"
@@ -65,30 +71,13 @@ def guardar_resultados_csv(datos, path_video, deteccion):
     filename = os.path.join(carpeta_salida, f"{nombre_video}_procesado_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
 
     try:
-        # Ajustar los encabezados y datos según la detección seleccionada
-        encabezados = {
-            "colocador": [
-                "Frame", "Angulo Codo Izq", "Angulo Rodilla Izq", "Angulo Tronco Izq", "Mano Izq Sobre Frente",
-                "Angulo Codo Der", "Angulo Rodilla Der", "Angulo Tronco Der", "Mano Der Sobre Frente",
-                "Estabilidad", "Movimiento Controlado"
-            ],
-            "saque": [
-                "Frame", "Angulo Codo", "Altura Brazo", "Velocidad Angular Codo", "Saque Valido",
-                "Estabilidad", "Movimiento Controlado"
-            ],
-            "ataque": [
-                "Frame", "Angulo Codo Izq", "Angulo Codo Der", "Velocidad Angular Codo Izq", "Velocidad Angular Codo Der",
-                "Ataque Valido", "Contacto Valido", "Simetria", "Estabilidad", "Movimiento Controlado"
-            ],
-            "recibo": [
-                "Frame", "Angulo Tronco", "Profundidad Sentadilla", "Posicion Correcta", "Contacto Brazos",
-                "Estabilidad", "Movimiento Controlado", "Distancia Entre Pies"
-            ],
-            "bloqueo": [
-                "Frame", "Angulo Brazo Izq", "Angulo Brazo Der", "Altura Bloqueo Izq", "Altura Bloqueo Der",
-                "Alineacion Tronco", "Bloqueo Valido", "Separacion Manos", "Simetria", "Estabilidad"
-            ]
-        }.get(deteccion, ["Frame", "Mensajes"])
+        # Obtener los encabezados desde el diccionario global
+        encabezados = CSV_HEADERS.get(deteccion, ["Frame", "Mensajes"])
+
+        # Verificar si hay datos para guardar
+        if not datos:
+            print("No hay datos para guardar en el CSV.")
+            return
 
         # Crear el DataFrame con los datos y encabezados
         df = pd.DataFrame(datos, columns=encabezados)
@@ -172,7 +161,11 @@ def procesar_video_camara(deteccion_func, deteccion):
 
     out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'XVID'), fps, (frame_width, frame_height))
     pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
-    
+
+    procesar_frames(cap, out, pose, deteccion_func, deteccion, output_path)
+
+def procesar_frames(cap, out, pose, deteccion_func, deteccion, output_path):
+    """Procesa frames desde una fuente de video y guarda resultados."""
     frame_number = 0
     datos_resultados = []
 
@@ -202,12 +195,11 @@ def procesar_video_camara(deteccion_func, deteccion):
         print(f"Video guardado en: {output_path}")
         guardar_resultados_csv(datos_resultados, output_path, deteccion)
     except Exception as e:
-        logging.error(f"Error en el procesamiento de la cámara: {e}")
+        logging.error(f"Error procesando frames: {e}")
     finally:
         cap.release()
         out.release()
         cv2.destroyAllWindows()
-
 
 def seleccionar_deteccion():
     """Muestra una ventana para seleccionar la detección deseada."""
@@ -226,7 +218,8 @@ def seleccionar_deteccion():
         "Colocador": "colocador",
         "Ataque": "ataque",
         "Recibo": "recibo",
-        "Bloqueo": "bloqueo"
+        "Bloqueo": "bloqueo",
+        "Multi Persona": "multi_persona" # Añadida la opción multi-persona
     }
 
     seleccion = StringVar()
@@ -263,41 +256,151 @@ def seleccionar_fuente_video():
     root.mainloop()
     return seleccion.get()
 
-def iniciar_procesamiento():
-    """Inicia el flujo principal del programa."""
-    # Seleccionar la detección
-    deteccion = seleccionar_deteccion()
-    if not deteccion:
-        print("No se seleccionó ninguna detección. Saliendo...")
-        return
-
-    # Mapear la detección seleccionada a la función correspondiente
-    opciones = {
-        "saque": detectar_saque,
-        "colocador": detectar_colocador,
-        "ataque": detectar_ataque,
-        "recibo": detectar_recibo,
-        "bloqueo": detectar_bloqueo
-    }
-    deteccion_func = opciones.get(deteccion)
-    if not deteccion_func:
-        print("Detección no válida seleccionada. Saliendo...")
-        return
-
-    # Seleccionar la fuente de video
+def obtener_fuente_video():
+    """
+    Permite al usuario seleccionar la fuente de video (archivo o cámara).
+    Retorna un objeto cv2.VideoCapture o una ruta de archivo.
+    """
     fuente = seleccionar_fuente_video()
     if fuente == "video":
         video_path = filedialog.askopenfilename(filetypes=[("Archivos de video", "*.mp4;*.avi")])
         if not video_path:
             print("No se seleccionó ningún archivo de video. Saliendo...")
-            return
-        nombre_video = os.path.splitext(os.path.basename(video_path))[0]
-        output_path = os.path.join("Salidas", f"{deteccion}_{nombre_video}_procesado.mp4")
-        procesar_video(video_path, deteccion_func, deteccion, output_path)
+            return None
+        return video_path  # Retornar la ruta del archivo
     elif fuente == "camara":
-        procesar_video_camara(deteccion_func, deteccion)
+        return cv2.VideoCapture(0)  # Retornar el objeto de captura de la cámara
     else:
         print("No se seleccionó ninguna fuente de video. Saliendo...")
+        return None
+
+def seleccionar_modalidad():
+    """
+    Muestra una ventana para seleccionar la modalidad: 'Persona' o 'Equipo'.
+    Retorna la opción seleccionada como cadena.
+    """
+    modalidad = None
+    def seleccionar(m):
+        nonlocal modalidad
+        modalidad = m
+        root.destroy()
+
+    root = Tk()
+    root.title("Seleccione Modalidad")
+    label = Label(root, text="Seleccione una modalidad de análisis:")
+    label.pack(pady=10)
+    boton_persona = Button(root, text="Persona", command=lambda: seleccionar("persona"))
+    boton_persona.pack(pady=5)
+    boton_equipo = Button(root, text="Equipo", command=lambda: seleccionar("equipo"))
+    boton_equipo.pack(pady=5)
+    root.mainloop()
+    return modalidad
+
+def seleccionar_guardar_video():
+    """
+    Muestra una ventana para preguntar si se desea guardar el video procesado con overlay.
+    Retorna True si se elige 'Sí', o False si se elige 'No'.
+    """
+    seleccion = StringVar()
+
+    def seleccionar(opcion):
+        seleccion.set(opcion)
+        root.destroy()
+
+    root = Tk()
+    root.title("Guardar Video Procesado")
+    label = Label(root, text="¿Desea guardar el video procesado con overlay?")
+    label.pack(pady=10)
+    boton_si = Button(root, text="Sí", command=lambda: seleccionar("si"))
+    boton_si.pack(pady=5)
+    boton_no = Button(root, text="No", command=lambda: seleccionar("no"))
+    boton_no.pack(pady=5)
+    root.mainloop()
+
+    return seleccion.get() == "si"
+
+def iniciar_procesamiento():
+    """Inicia el flujo principal del programa."""
+    # Seleccionar modalidad mediante botones
+    modalidad = seleccionar_modalidad()
+    if not modalidad:
+        print("No se seleccionó modalidad. Saliendo...")
+        return
+
+    if modalidad == "persona":
+        # Seleccionar detección mediante ventana (ya implementada)
+        deteccion = seleccionar_deteccion()
+        if not deteccion:
+            print("No se seleccionó ninguna detección. Saliendo...")
+            return
+
+        deteccion_func = {
+            "saque": detectar_saque,
+            "colocador": detectar_colocador,
+            "ataque": detectar_ataque,
+            "recibo": detectar_recibo,
+            "bloqueo": detectar_bloqueo
+        }.get(deteccion)
+
+        if not deteccion_func:
+            print("Detección no válida seleccionada. Saliendo...")
+            return
+
+        # Obtener la fuente de video mediante ventana de botones
+        fuente = obtener_fuente_video()
+        if fuente is None:
+            return
+
+        if isinstance(fuente, str):  # Si es una ruta de archivo
+            # Preguntar si se desea guardar el video procesado con overlay
+            if seleccionar_guardar_video():
+                nombre_video = os.path.splitext(os.path.basename(fuente))[0]
+                output_path = os.path.join("Salidas", f"{deteccion}_{nombre_video}_procesado_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4")
+                procesar_video(fuente, deteccion_func, deteccion, output_path)
+            else:
+                # Procesar video sin guardar overlay (se muestran y procesan los frames)
+                procesar_video_sin_guardar(fuente, deteccion_func, deteccion)
+        else:  # Si es un objeto cv2.VideoCapture (cámara en tiempo real)
+            procesar_video_camara(deteccion_func, deteccion)
+
+    elif modalidad == "equipo":
+        # Para análisis de equipo, seleccionar directamente la fuente (ventana con botones)
+        fuente = obtener_fuente_video()
+        if fuente is None:
+            return
+
+        if isinstance(fuente, str):  # Si es una ruta de archivo
+            print(f"Iniciando detección multipersona en el video: {fuente}")
+            run_multiperson_detection(video_path=fuente)
+        else:  # Si es un objeto cv2.VideoCapture (cámara)
+            print("Iniciando detección multipersona en tiempo real desde la cámara...")
+            run_multiperson_detection()
+
+    else:
+        print("Opción no válida. Saliendo...")
+
+# Ejemplo de función de procesamiento sin guardar el video (se muestra overlay pero no se guarda)
+def procesar_video_sin_guardar(video_path, deteccion_func, deteccion):
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print("No se pudo abrir el video.")
+        return
+
+    pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+    frame_number = 0
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame, evaluacion_resultados = procesar_frame(frame, pose, deteccion_func, frame_number)
+        cv2.imshow("Detección en Tiempo Real", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+        frame_number += 1
+
+    cap.release()
+    cv2.destroyAllWindows()
+    print("Procesamiento en tiempo real finalizado (video no guardado).")
 
 if __name__ == "__main__":
     iniciar_procesamiento()

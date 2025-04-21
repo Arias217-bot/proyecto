@@ -109,5 +109,5 @@ def detectar_colocador(landmarks):
         print(f"Error en detectar_colocador: {e}")
         return {
             "mensajes": ["Error en la detección del colocador"],
-            "datos": [None] * 11
+            "datos": [None] * 10
         }

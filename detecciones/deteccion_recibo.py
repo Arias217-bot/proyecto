@@ -32,6 +32,9 @@ def detectar_recibo(landmarks):
         landmarks (list): Lista de landmarks detectados por MediaPipe.
     Returns:
         dict: Resultados de la evaluación con mensajes y datos relevantes.
+              La lista "datos" contiene 7 elementos:
+                [Ángulo del Tronco, Profundidad de Sentadilla, Posición Correcta, 
+                 Contacto de Brazos, Estabilidad, Movimiento Controlado, Distancia Entre Pies]
     """
     try:
         # Validar landmarks
@@ -43,7 +46,7 @@ def detectar_recibo(landmarks):
             PoseLandmark.NOSE.value,
             PoseLandmark.LEFT_WRIST.value,
             PoseLandmark.RIGHT_WRIST.value,
-            PoseLandmark.LEFT_ANKLE.value,
+            PoseLandmark.LEFT_ANKLE.value,  # Puede ser redundante, verificar duplicidad
             PoseLandmark.RIGHT_ANKLE.value
         ]
         if not isinstance(landmarks, list) or not all(idx < len(landmarks) for idx in required_landmarks):
@@ -88,7 +91,7 @@ def detectar_recibo(landmarks):
             f"Distancia entre pies: {distancia_pies:.2f}"
         ]
 
-        # Salida estructurada
+        # Salida estructurada con 7 columnas en "datos"
         return {
             "mensajes": mensajes,
             "datos": [
@@ -97,7 +100,7 @@ def detectar_recibo(landmarks):
                 posicion_correcta,
                 contacto_brazos,
                 estabilidad,
-                not movimiento_excesivo,
+                not movimiento_excesivo,  # Indica "Movimiento Controlado" (True si es controlado)
                 distancia_pies
             ]
         }

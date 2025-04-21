@@ -1,8 +1,9 @@
 # Ignorar todo por defecto
 *
 
-# No ignorar estos archivos y carpetas principales
+# No ignorar los archivos y carpetas principales
 !main.py
+!multi_person_detector.py
 !requirements.txt
 !README.md
 !.gitignore
@@ -12,12 +13,16 @@
 !evaluaciones/
 !fonts/
 !Salidas/
+!models/
+!utils/
+!estadistica/
 
-# Ignorar el contenido dentro de las carpetas, pero no las carpetas en sí
+# Ignorar el contenido dentro de algunas carpetas (excepto las que no queremos ignorar)
 detecciones/*
 evaluaciones/*
 fonts/*
 Salidas/*
+models/*
 
 # No ignorar archivos específicos dentro de las carpetas
 !detecciones/**/*.py
