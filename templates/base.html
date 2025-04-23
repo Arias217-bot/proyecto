@@ -106,6 +106,7 @@
     <!-- Barra lateral -->
     <div class="sidebar" id="sidebar">
         <ul class="list-unstyled">
+
             <li>
                 {% if documento %}
                     <a href="{{ url_for('usuario_bp.profile_page', documento=documento) }}">Jugador</a>
@@ -120,6 +121,7 @@
                     <a href="#">Equipos</a>
                 {% endif %}
             </li>            
+
             <li><a href="#" class="text-danger logout-btn">Cerrar Sesión</a></li>
         </ul>
     </div>
