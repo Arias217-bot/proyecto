@@ -10,6 +10,7 @@ partido_routes = EntidadRoutes('partido', Partido)
 partido_bp = partido_routes.bp  # El Blueprint que usaremos en `app.py`
 
 @partido_bp.route('/partido', methods=['GET'])
+
 def partido():
 
     query = request.args.get('q','')
