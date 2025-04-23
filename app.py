@@ -8,7 +8,7 @@ from models.usuario import Usuario
 
 from config import init_db, db
 from routes import blueprints
-
+from flask import session
 app = Flask(__name__)
 
 # Inicialización de la base de datos
@@ -122,10 +122,12 @@ def inject_documento():
 def partido():
     return render_template('partido.html')
 
-#home page
+
 @app.route('/')
 def home():
-    return render_template('base.html')
+    documento = session.get('documento')  # o de la base de datos, o fijo para pruebas
+    return render_template('base.html', documento=documento)
+
 
 # Manejo de errores
 @app.errorhandler(404)
