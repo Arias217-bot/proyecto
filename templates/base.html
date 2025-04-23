@@ -106,14 +106,21 @@
     <!-- Barra lateral -->
     <div class="sidebar" id="sidebar">
         <ul class="list-unstyled">
-            {% if documento %}
-                <li><a href="{{ url_for('usuario_bp.profile_page', documento=documento) }}">Jugador</a></li>
-                <li><a href="{{ url_for('equipo_bp.perfil_equipos', documento=documento) }}">Equipos</a></li>
-{% else %}
-    <li><span class="text-muted">Jugador</span></li>
-    <li><span class="text-muted">Equipos</span></li>
-{% endif %}
 
+            <li>
+                {% if documento %}
+                    <a href="{{ url_for('usuario_bp.profile_page', documento=documento) }}">Jugador</a>
+                {% else %}
+                    <a href="#">Jugador</a>
+                {% endif %}
+            </li>
+            <li>
+                {% if documento %}
+                    <a href="{{ url_for('equipo_bp.perfil_equipos', documento=documento) }}">Equipos</a>
+                {% else %}
+                    <a href="#">Equipos</a>
+                {% endif %}
+            </li>            
 
             <li><a href="#" class="text-danger logout-btn">Cerrar Sesión</a></li>
         </ul>

@@ -141,7 +141,10 @@
                         <tr style="background-color: white; color: black;">
                             <td><input type="checkbox" name="torneosSeleccionados" value="{{ torneo.id_torneo }}"></td>
                             <td>
-                                <a href="/torneo/{{ equipo.nombre|replace(' ', '-')|lower }}/{{ torneo.nombre_torneo|replace(' ', '-')|lower }}">
+                                <a href="{{ url_for('torneo.detalle_torneo',
+                                                    nombre_equipo=equipo.nombre|replace(' ', '-')|lower,
+                                                    id_torneo=torneo.id_torneo,
+                                                    nombre_torneo=torneo.nombre_torneo|replace(' ', '-')|lower) }}">
                                     {{ torneo.nombre_torneo }}
                                 </a>
                             </td>

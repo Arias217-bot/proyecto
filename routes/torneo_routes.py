@@ -1,6 +1,7 @@
 # routes/torneo_routes.py
 from routes.entidad_routes import EntidadRoutes
 from models.torneo import Torneo
+from models.partido import Partido
 
 from flask import render_template, request
 from config import db
@@ -24,13 +25,12 @@ def torneo_page():
     # Pasar el valor de búsqueda a la plantilla
     return render_template('torneo.html', torneos=torneos, q=query)
 
-@torneo_bp.route('/<nombre_equipo>/<nombre_torneo>', endpoint='torneo_detalle')
-def detalle_torneo(nombre_equipo, nombre_torneo):
-    # Formatea los nombres (como haces en la ruta de equipo)
+@torneo_bp.route('/<nombre_equipo>/<id_torneo>/<nombre_torneo>', endpoint='detalle_torneo')
+def detalle_torneo(id_torneo, nombre_equipo, nombre_torneo):
+    # Buscar el equipo y torneo como ya lo haces
     nombre_equipo_formateado = nombre_equipo.replace("-", " ").lower()
     nombre_torneo_formateado = nombre_torneo.replace("-", " ").lower()
-    
-    # Buscar el equipo por nombre (asumiendo nombre único)
+
     equipo = db.session.query(Torneo.equipo.property.mapper.class_).filter(
         db.func.lower(Torneo.equipo.property.mapper.class_.nombre) == nombre_equipo_formateado
     ).first()
@@ -38,7 +38,6 @@ def detalle_torneo(nombre_equipo, nombre_torneo):
     if not equipo:
         return "Equipo no encontrado", 404
 
-    # Buscar torneo por nombre y por equipo
     torneo = db.session.query(Torneo).filter(
         db.func.lower(Torneo.nombre_torneo) == nombre_torneo_formateado,
         Torneo.id_equipo == equipo.id_equipo
@@ -46,5 +45,27 @@ def detalle_torneo(nombre_equipo, nombre_torneo):
 
     if not torneo:
         return "Torneo no encontrado", 404
+    
+    # Obtener partidos del torneo
+    partidos = (
+        db.session.query(Partido)
+        .filter(Partido.id_torneo == torneo.id_torneo)
+        .all()
+    )
 
-    return render_template('detalle_torneo.html', torneo=torneo, equipo=equipo)
+    partidos_lista = [
+        {
+            "nombre_partido": partido.nombre_partido,
+            "nombre_equipo_rival": partido.nombre_equipo_rival,
+            "fecha": partido.fecha.strftime('%Y-%m-%d %H:%M'),
+            "lugar": partido.lugar or "Sin especificar",
+            "marcador_local": partido.marcador_local,
+            "marcador_rival": partido.marcador_rival,
+            "video_url": partido.video_url or "Sin video",
+            "observaciones": partido.observaciones or "Sin observaciones"
+        }
+        for partido in partidos
+    ]
+
+    # Aquí pasamos el documento del partido al contexto
+    return render_template('detalle_torneo.html', torneo=torneo, equipo=equipo, id_torneo=id_torneo, partidos=partidos_lista, nombre_equipo=nombre_equipo_formateado, nombre_torneo=nombre_torneo_formateado)
