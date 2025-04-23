@@ -1,3 +1,4 @@
+# models/partido.py
 from config import db
 from models.entidad_base import EntidadBase
 
