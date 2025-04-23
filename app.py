@@ -20,6 +20,8 @@ for bp in blueprints:
         app.register_blueprint(bp, url_prefix='/perfil')
     elif bp.name == "equipo_bp":
         app.register_blueprint(bp, url_prefix='/equipos')
+    elif bp.name == "partido_bp":
+        app.register_blueprint(bp, url_prefix='/partido')
     elif bp.name == "categoria_edad":
         app.register_blueprint(bp, url_prefix='/categoria_edad')
     elif bp.name == "categoria_sexo":
@@ -115,6 +117,15 @@ def inject_documento():
         return {'documento': documento}
     except:
         return {'documento': None}
+
+@app.route('/partido')
+def partido():
+    return render_template('partido.html')
+
+#home page
+@app.route('/')
+def home():
+    return render_template('base.html')
 
 # Manejo de errores
 @app.errorhandler(404)
