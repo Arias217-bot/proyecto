@@ -136,6 +136,12 @@ def home():
 def administrador():
     return render_template('administrador.html')
 
+@app.route('/perfil', methods=['GET','PUT'])
+def actualizar_usuario():
+    # lógica para actualizar perfil
+    return jsonify({"mensaje": "Perfil actualizado"}), 200
+
+
 # Manejo de errores
 @app.errorhandler(404)
 def page_not_found(e):
