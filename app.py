@@ -9,6 +9,8 @@ from models.usuario import Usuario
 from config import init_db, db
 from routes import blueprints
 from flask import session
+from routes.administrador_routes import administrador_bp
+
 app = Flask(__name__)
 
 # Inicialización de la base de datos
@@ -44,6 +46,8 @@ for bp in blueprints:
         app.register_blueprint(bp, url_prefix='/mensajes')
     elif bp.name == "partido":
         app.register_blueprint(bp, url_prefix='/partido')
+        
+app.register_blueprint(administrador_bp, url_prefix='/administrador')
         
 # Configuración de JWT
 app.config['JWT_SECRET_KEY'] = 'tu_clave_secreta'
@@ -128,6 +132,9 @@ def home():
     documento = session.get('documento')  # o de la base de datos, o fijo para pruebas
     return render_template('base.html', documento=documento)
 
+@app.route('/administrador')
+def administrador():
+    return render_template('administrador.html')
 
 # Manejo de errores
 @app.errorhandler(404)

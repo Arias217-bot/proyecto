@@ -12,18 +12,22 @@ from .equipo_rival_routes import equipo_rival_bp
 from .jugadores_rivales_routes import jugadores_rivales_bp
 from .mensajes_routes import mensajes_bp
 from .partido_routes import partido_bp
+from .administrador_routes import administrador_bp
 
 # Definir los blueprints aquí para importarlos fácilmente
-blueprints = [usuario_bp, 
-              equipo_bp, 
-              categoria_edad_bp, 
-              categoria_sexo_bp, 
-              jugadas_bp, 
-              rol_bp, 
-              posicion_bp, 
-              detalle_jugada_bp,
-              torneo_bp,
-              equipo_rival_bp,
-              jugadores_rivales_bp,
-              mensajes_bp,
-              partido_bp]
+blueprints = [
+    usuario_bp, 
+    equipo_bp, 
+    categoria_edad_bp, 
+    categoria_sexo_bp, 
+    jugadas_bp, 
+    rol_bp, 
+    posicion_bp, 
+    detalle_jugada_bp,
+    torneo_bp,
+    equipo_rival_bp,
+    jugadores_rivales_bp,
+    mensajes_bp,
+    partido_bp,  # Cambiar el punto por una coma
+    administrador_bp
+]

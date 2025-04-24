@@ -119,8 +119,15 @@
                 {% else %}
                     <a href="#">Equipos</a>
                 {% endif %}
-            </li>            
-
+            </li>
+            <!-- Opción Administrador -->
+            <li>
+                {% if documento %}
+                    <a href="{{ url_for('administrador.administrador_page', documento=documento) }}">Administrador</a>
+                {% else %}
+                    <a href="#">Administrador</a>
+                {% endif %}
+            </li>
             <li><a href="#" class="text-danger logout-btn" id="logoutBtn">Cerrar Sesión</a></li>
         </ul>
     </div>
