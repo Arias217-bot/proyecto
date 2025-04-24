@@ -1,17 +1,23 @@
 # routes/partido_routes.py
 from routes.entidad_routes import EntidadRoutes
-from models.partido import Partido
-
-from flask import render_template
+from flask import render_template, request
 from config import db
+# Modelos
+from models.partido import Partido
 
 # Blueprints
 partido_routes = EntidadRoutes('partido', Partido)
 partido_bp = partido_routes.bp  # El Blueprint que usaremos en `app.py`
 
-@partido_bp.route('/ver/<int:id_partido>')
-def partido_page(id_partido):
-    partido = db.session.get(Partido, id_partido)
-    if not partido:
-        return "Partido no encontrado", 404
-    return render_template('partido.html', partido=partido, id_partido=id_partido)
+@partido_bp.route('/partido', methods=['GET'])
+
+def partido():
+
+    query = request.args.get('q','')
+    if query:
+        partidos_lista = db.session.query(Partido).filter(
+            Partido.id_partido.like(f'%{query}%') 
+        ).all()
+    else:
+        partidos_lista = db.session.query(Partido).all()
+    return render_template('partido.html', partidos=partidos_lista,q=query)

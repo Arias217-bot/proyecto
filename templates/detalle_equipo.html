@@ -1,0 +1,404 @@
+{% extends './base.html' %}
+{% block title %} Detalles del Equipo {% endblock %}
+
+{% block body %}
+<div class="container mt-4" style="background-color: #f8841c; padding: 20px; border-radius: 10px;">
+    <h2 class="text-center mb-4" style="color: black; font-weight: bold;">{{ equipo.nombre }}</h2>
+
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" id="equipoTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="descripcion-tab" data-bs-toggle="tab" data-bs-target="#descripcion" type="button" role="tab">Descripción</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="integrantes-tab" data-bs-toggle="tab" data-bs-target="#integrantes" type="button" role="tab">Integrantes</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="mensajes-tab" data-bs-toggle="tab" data-bs-target="#mensajes" type="button" role="tab">Mensajes</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="torneos-tab" data-bs-toggle="tab" data-bs-target="#torneos" type="button" role="tab">Torneos</button>
+        </li>
+    </ul>
+
+    <!-- Tab panes -->
+    <div class="tab-content mt-4">
+
+        <!-- Descripción -->
+        <div class="tab-pane fade show active" id="descripcion" role="tabpanel">
+            <table class="table text-center" style="border-radius: 10px; overflow: hidden;">
+                <thead style="background-color: black; color: white;">
+                    <tr>
+                        <th>Descripción</th>
+                        <th>Categoría Edad</th>
+                        <th>Categoría Sexo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background-color: white; color: black;">
+                        <td>{{ equipo.descripcion }}</td>
+                        <td>{{ equipo.categoria_edad }}</td>
+                        <td>{{ equipo.categoria_sexo }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Integrantes -->
+        <div class="tab-pane fade" id="integrantes" role="tabpanel">
+            <div class="d-flex justify-content-between mb-3">
+                <!-- Botón para abrir el modal de creación -->
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearIntegranteModal">Agregar integrante</button>
+                <!-- Botón para borrar seleccionados -->
+                <button class="btn btn-danger" id="borrarSeleccionados">Borrar seleccionados</button>
+            </div>
+
+            <form id="integrantesForm">
+                <table class="table text-center" style="border-radius: 10px; overflow: hidden;">
+                    <thead style="background-color: black; color: white;">
+                        <tr>
+                            <th><input type="checkbox" id="selectAll"></th>
+                            <th>Documento</th>
+                            <th>Nombre</th>
+                            <th>Rol</th>
+                            <th>Posición</th>
+                            <th>Número</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for integrante in integrantes %}
+                        <tr style="background-color: white; color: black;">
+                            <td><input type="checkbox" name="integrantesSeleccionados" value="{{ integrante.documento }}"></td>
+                            <td>{{ integrante.documento }}</td>
+                            <td>{{ integrante.nombre }}</td>
+                            <td>{{ integrante.rol }}</td>
+                            <td>{{ integrante.posicion }}</td>
+                            <td>{{ integrante.numero }}</td>
+                            <td>
+                                <button type="button" class="btn btn-warning btn-sm editarIntegrante" data-documento="{{ integrante.documento }}">Editar</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </form>
+        </div>
+
+        <!-- Mensajes -->
+        <div class="tab-pane fade" id="mensajes" role="tabpanel">
+            <div class="d-flex justify-content-between mb-3">
+                <!-- Botón para abrir el modal de creación -->
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearMensajeModal">Nuevo mensaje</button>
+                <!-- Botón para borrar seleccionados -->
+                <button class="btn btn-danger" id="borrarSeleccionados">Borrar seleccionados</button>
+            </div>
+
+            <form id="mensajesForm">
+                <table class="table text-center" style="border-radius: 10px; overflow: hidden;">
+                    <thead style="background-color: black; color: white;">
+                        <tr>
+                            <th><input type="checkbox" id="selectAll"></th>
+                            <th>Contenido</th>
+                            <th>Autor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tbody>
+                            {% for mensaje in mensajes %}
+                            <tr style="background-color: white; color: black;">
+                                <td><input type="checkbox" name="mensajesSeleccionados" value="{{ mensaje.id_mensaje }}"></td>
+                                <td>{{ mensaje.contenido }}</td>
+                                <td>{{ mensaje.autor }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </tbody>
+                </table>
+            </form>
+        </div>
+
+        <!-- Torneos -->
+        <div class="tab-pane fade" id="torneos" role="tabpanel">
+            <div class="d-flex justify-content-between mb-3">
+                <!-- Botón para abrir el modal de creación de torneo -->
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearTorneoModal">Nuevo torneo</button>
+                <!-- Botón para eliminar torneos seleccionados -->
+                <button class="btn btn-danger" id="borrarTorneosSeleccionados">Borrar seleccionados</button>
+            </div>
+        
+            <form id="torneosForm">
+                <table class="table text-center" style="border-radius: 10px; overflow: hidden;">
+                    <thead style="background-color: black; color: white;">
+                        <tr>
+                            <th><input type="checkbox" id="selectAllTorneos"></th>
+                            <th>Nombre del Torneo</th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for torneo in torneos %}
+                        <tr style="background-color: white; color: black;">
+                            <td><input type="checkbox" name="torneosSeleccionados" value="{{ torneo.id_torneo }}"></td>
+                            <td>
+                                <a href="{{ url_for('torneo.detalle_torneo',
+                                                    nombre_equipo=equipo.nombre|replace(' ', '-')|lower,
+                                                    id_torneo=torneo.id_torneo,
+                                                    nombre_torneo=torneo.nombre_torneo|replace(' ', '-')|lower) }}">
+                                    {{ torneo.nombre_torneo }}
+                                </a>
+                            </td>
+                            <td>{{ torneo.descripcion or 'Sin descripción' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </form>
+        </div>        
+
+    </div>
+
+    <div class="text-center">
+        <a href="{{ url_for('equipo_bp.perfil_equipos', documento=documento) }}" class="btn btn-secondary mt-4">Volver</a>
+    </div>
+</div>
+
+<!-- Modal para crear integrante -->
+<div class="modal fade" id="crearIntegranteModal" tabindex="-1" aria-labelledby="crearIntegranteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="crearIntegranteModalLabel">Crear un nuevo integrante</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="crearIntegranteForm">
+                    <div class="mb-3">
+                        <label for="documento" class="form-label">Documento</label>
+                        <input type="text" class="form-control" id="documento" name="documento" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rol" class="form-label">Rol</label>
+                        <select class="form-select" id="rol" name="rol" required>
+                            {% for rol in roles %}
+                                <option value="{{ rol.id_rol }}">{{ rol.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="posicion" class="form-label">Posición</label>
+                        <select class="form-select" id="posicion" name="posicion" required>
+                            {% for posicion in posiciones %}
+                                <option value="{{ posicion.id_posicion }}">{{ posicion.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="numero" class="form-label">Número de Camisa</label>
+                        <input type="number" class="form-control" id="numero" name="numero" required min="0">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Crear</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar integrante -->
+<div class="modal fade" id="editarIntegranteModal" tabindex="-1" aria-labelledby="editarIntegranteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editarIntegranteModalLabel">Editar Integrante</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editarIntegranteForm">
+            <!-- Campo hidden para id_equipo -->
+            <input type="hidden" id="editar_id_equipo" name="id_equipo" value="{{ equipo.id_equipo }}">
+            <!-- Campo hidden para documento (si no se desea modificar) -->
+            <input type="hidden" id="editar_documento" name="documento">
+            <div class="mb-3">
+              <label for="editar_rol" class="form-label">Rol</label>
+              <select class="form-select" id="editar_rol" name="rol" required>
+                {% for rol in roles %}
+                  <option value="{{ rol.id_rol }}">{{ rol.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="editar_posicion" class="form-label">Posición</label>
+              <select class="form-select" id="editar_posicion" name="posicion" required>
+                {% for posicion in posiciones %}
+                  <option value="{{ posicion.id_posicion }}">{{ posicion.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="editar_numero" class="form-label">Número de Camisa</label>
+              <input type="number" class="form-control" id="editar_numero" name="numero" required min="0">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>  
+
+<!-- Modal para crear mensaje -->
+<div class="modal fade" id="crearMensajeModal" tabindex="-1" aria-labelledby="crearMensajeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="crearMensajeModalLabel">Crear un nuevo mensaje</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="crearMensajeForm">
+                    <div class="mb-3">
+                        <label for="contenido" class="form-label">Contenido</label>
+                        <textarea class="form-control" id="contenido" name="contenido" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="autor" class="form-label">Autor</label>
+                        <input type="text" class="form-control" id="autor" name="autor" required>
+                    </div>
+                    <input type="hidden" name="id_equipo" value="{{ equipo.id_equipo }}">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Crear Mensaje</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Función auxiliar para realizar peticiones fetch
+    function sendFetch(url, method, data) {
+      return fetch(url, {
+        method: method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("Error en la solicitud");
+        return response.json();
+      });
+    }
+  
+    // Seleccionar todos los checkboxes para integrantes y mensajes
+    document.getElementById("selectAll").addEventListener("change", function() {
+        const checkboxesIntegrantes = document.querySelectorAll("input[name='integrantesseleccionados']");
+        const checkboxesMensajes = document.querySelectorAll("input[name='mensajesseleccionados']");
+        checkboxesIntegrantes.forEach(checkbox => checkbox.checked = this.checked);
+        checkboxesMensajes.forEach(checkbox => checkbox.checked = this.checked);
+    });
+  
+    // Editar integrante: configuración del modal con datos del integrante seleccionado
+    document.querySelectorAll('.editarIntegrante').forEach(function(button) {
+      button.addEventListener('click', function() {
+        const documento = this.getAttribute('data-documento');
+        const row = this.closest('tr');
+        const rolActual = row.children[3].innerText.trim();
+        const posicionActual = row.children[4].innerText.trim();
+        const numeroActual = row.children[5].innerText.trim();
+  
+        // Rellenar el modal de edición
+        document.getElementById('editar_documento').value = documento;
+        Array.from(document.getElementById('editar_rol').options).forEach(opt => {
+          if(opt.text.trim() === rolActual) opt.selected = true;
+        });
+        Array.from(document.getElementById('editar_posicion').options).forEach(opt => {
+          if(opt.text.trim() === posicionActual) opt.selected = true;
+        });
+        document.getElementById('editar_numero').value = numeroActual;
+  
+        // Mostrar el modal de edición (Bootstrap 5)
+        new bootstrap.Modal(document.getElementById('editarIntegranteModal')).show();
+      });
+    });
+  
+    // Manejar el submit del formulario de edición de integrantes
+    document.getElementById('editarIntegranteForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const formData = new FormData(this);
+      const jsonData = Object.fromEntries(formData.entries());
+  
+      sendFetch("/equipos/integrantes/editar", "POST", jsonData)
+        .then(data => {
+          alert(data.mensaje);
+          location.reload();
+        })
+        .catch(error => console.error("Error al editar integrante:", error));
+    });
+  
+    // Funciones para borrar elementos (integrantes y mensajes)
+    function borrarElementos(selector, url) {
+      const seleccionados = Array.from(document.querySelectorAll(selector))
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value);
+  
+      if (seleccionados.length === 0) {
+        alert("No hay elementos seleccionados.");
+        return;
+      }
+  
+      sendFetch(url, "POST", { documentos: seleccionados })
+        .then(data => {
+          alert(data.mensaje);
+          location.reload();
+        })
+        .catch(error => console.error("Error al borrar elementos:", error));
+    }
+  
+    // Borrar integrantes
+    document.getElementById("borrarSeleccionadosIntegrantes").addEventListener("click", function() {
+      borrarElementos("input[name='integrantesseleccionados']:checked", "/equipos/integrantes/borrar");
+    });
+  
+    // Borrar mensajes
+    document.getElementById("borrarSeleccionadosMensajes").addEventListener("click", function() {
+      borrarElementos("input[name='mensajesseleccionados']:checked", "/mensajes/borrar");
+    });
+  
+    // Crear integrante
+    document.getElementById("crearIntegranteForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      const formData = new FormData(this);
+      const jsonData = Object.fromEntries(formData.entries());
+      jsonData.id_equipo = "{{ equipo.id_equipo }}";  // Valor dinámico desde la plantilla
+  
+      sendFetch("/equipos/integrantes/crear", "POST", jsonData)
+        .then(data => {
+          alert(data.mensaje);
+          location.reload();
+        })
+        .catch(error => console.error("Error al crear integrante:", error));
+    });
+  
+    // Crear mensaje: usar la ruta del Blueprint de mensajes (suponiendo que fue registrado con url_prefix='/mensajes')
+    document.getElementById("crearMensajeForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      const formData = new FormData(this);
+      const jsonData = Object.fromEntries(formData.entries());
+      jsonData.id_equipo = "{{ equipo.id_equipo }}";  // Asegurarse de asociar el mensaje al equipo
+  
+      // Aquí se hace el fetch a la ruta genérica de mensajes
+      sendFetch("/mensajes/", "POST", jsonData)
+        .then(data => {
+          alert(data.mensaje);
+          location.reload();
+        })
+        .catch(error => console.error("Error al crear mensaje:", error));
+    });
+  </script>
+  
+{% endblock %}
