@@ -5,7 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import timedelta
 
 from models.usuario import Usuario
-
+from routes.administrador_routes import administrador_bp
 from config import init_db, db
 from routes import blueprints
 from flask import session
@@ -47,6 +47,8 @@ for bp in blueprints:
     elif bp.name == "usuario_equipo":
         app.register_blueprint(bp, url_prefix='/usuario_equipo')
         
+app.register_blueprint(administrador_bp, url_prefix='/administrador')
+
 # Configuración de JWT
 app.config['JWT_SECRET_KEY'] = 'tu_clave_secreta'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=5)
