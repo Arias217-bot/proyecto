@@ -44,6 +44,8 @@ for bp in blueprints:
         app.register_blueprint(bp, url_prefix='/mensajes')
     elif bp.name == "partido":
         app.register_blueprint(bp, url_prefix='/partido')
+    elif bp.name == "usuario_equipo":
+        app.register_blueprint(bp, url_prefix='/usuario_equipo')
         
 # Configuración de JWT
 app.config['JWT_SECRET_KEY'] = 'tu_clave_secreta'
@@ -117,11 +119,6 @@ def inject_documento():
         return {'documento': documento}
     except:
         return {'documento': None}
-
-@app.route('/partido')
-def partido():
-    return render_template('partido.html')
-
 
 @app.route('/')
 def home():
