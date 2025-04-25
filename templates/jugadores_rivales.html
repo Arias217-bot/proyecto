@@ -1,198 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jugadores Rivales</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body {
-      min-height: 100vh;
-      background-color: #f8f9fa;
-      padding: 1rem;
-    }
-    .card-container {
-      max-width: 700px;
-      margin: auto;
-    }
-    .card-list {
-      max-height: 70vh;
-      overflow-y: auto;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jugadores Rivales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            padding: 1rem;
+        }
+        .card-container {
+            max-width: 700px;
+            margin: auto;
+        }
+        .card-list {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+    </style>
 </head>
 <body>
-  <div class="card-container">
-    <div class="mb-4">
-      <form method="GET" action="{{ url_for('jugadores_rivales.jugadores_rivales_page') }}" class="d-flex">
-        <input type="text" name="q" class="form-control me-2" placeholder="Buscar jugador rival..." value="{{ q }}">
-        <button type="submit" class="btn btn-outline-primary">Buscar</button>
-      </form>
-    </div>
-
-    <div class="text-center mb-3">
-      <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#formPanel" aria-expanded="false" aria-controls="formPanel">
-        ➕ Agregar Jugador Rival
-      </button>
-    </div>
-
-    <div class="collapse mb-4" id="formPanel">
-      <div class="card card-body">
-        <form id="crearJugadorRivalForm">
-          <div class="mb-3">
-            <input type="text" id="documento" name="documento" class="form-control" placeholder="Documento" required>
-          </div>
-          <div class="mb-3">
-            <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Nombre" required>
-          </div>
-          <div class="mb-3">
-            <input type="text" id="nombreEquipoRival" name="nombre_equipo_rival" class="form-control" placeholder="Nombre del equipo rival" required>
-          </div>
-          <div class="mb-3">
-            <input type="text" id="telefono" name="telefono" class="form-control" placeholder="Teléfono">
-          </div>
-          <div class="mb-3">
-            <input type="email" id="email" name="email" class="form-control" placeholder="Correo electrónico">
-          </div>
-          <div class="mb-3">
-            <input type="text" id="eps" name="eps" class="form-control" placeholder="EPS">
-          </div>
-          <button id="crearJugadorRival" type="button" class="btn btn-primary">Agregar</button>
-        </form>
-      </div>
-    </div>
-
-    <div class="card shadow-lg p-4 rounded-4 card-list">
-      <h2 class="text-center mb-4">Jugadores Rivales</h2>
-      {% for jugador in jugadores_rivales_lista %}
-        <div class="border p-3 mb-3 rounded bg-white">
-          <div class="mb-2"><strong>Documento:</strong> {{ jugador.documento }}</div>
-          <div class="mb-2"><strong>Nombre:</strong> {{ jugador.nombre }}</div>
-          <div class="mb-2"><strong>Equipo Rival:</strong> {{ jugador.nombre_equipo_rival }}</div>
-          <div class="mb-2"><strong>Teléfono:</strong> {{ jugador.telefono }}</div>
-          <div class="mb-2"><strong>Email:</strong> {{ jugador.email }}</div>
-          <div class="mb-2"><strong>EPS:</strong> {{ jugador.eps }}</div>
-          <div class="d-flex gap-2">
-            <button class="btn btn-warning btn-sm editar-jugador" data-id="{{ jugador.documento }}" data-nombre="{{ jugador.nombre }}" data-equipo="{{ jugador.nombre_equipo_rival }}" data-telefono="{{ jugador.telefono }}" data-email="{{ jugador.email }}" data-eps="{{ jugador.eps }}">✏️ Editar</button>
-            <form method="POST" action="{{ url_for('jugadores_rivales.delete', id=jugador.documento) }}" onsubmit="return confirmarEliminacion()">
-              <button type="button" class="btn btn-danger btn-sm eliminar-jugador" data-id="{{ jugador.documento }}">🗑️ Eliminar</button>
+    <div id="crud-container"
+         data-base-url="{{ url_for('jugadores_rivales.create') }}"
+         data-list-url="{{ url_for('jugadores_rivales.jugadores_rivales_page') }}"
+         class="card-container">
+        <div class="mb-4">
+            <form method="GET" action="{{ url_for('jugadores_rivales.jugadores_rivales_page') }}" class="d-flex">
+                <input type="text" name="q" class="form-control me-2" placeholder="Buscar jugador rival..." value="{{ q }}">
+                <button type="submit" class="btn btn-outline-primary">Buscar</button>
             </form>
-          </div>
-          <div class="editar-formulario d-none mt-3" id="formulario-{{ jugador.documento }}">
-            <input type="text" id="nombre-{{ jugador.documento }}" class="form-control mb-2" value="{{ jugador.nombre }}">
-            <input type="text" id="equipo-{{ jugador.documento }}" class="form-control mb-2" value="{{ jugador.nombre_equipo_rival }}">
-            <input type="text" id="telefono-{{ jugador.documento }}" class="form-control mb-2" value="{{ jugador.telefono }}">
-            <input type="email" id="email-{{ jugador.documento }}" class="form-control mb-2" value="{{ jugador.email }}">
-            <input type="text" id="eps-{{ jugador.documento }}" class="form-control mb-2" value="{{ jugador.eps }}">
-            <button class="btn btn-primary btn-sm guardar-jugador" data-id="{{ jugador.documento }}">Guardar</button>
-            <button class="btn btn-secondary btn-sm cancelar-edicion" data-id="{{ jugador.documento }}">Cancelar</button>
-          </div>
         </div>
-      {% else %}
-        <p class="text-center">No se encontraron jugadores rivales</p>
-      {% endfor %}
+
+        <div class="text-center mb-3">
+            <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#formPanel" aria-expanded="false" aria-controls="formPanel">
+                ➕ Agregar Jugador Rival
+            </button>
+        </div>
+
+        <div class="collapse mb-4" id="formPanel">
+            <div class="card card-body">
+                <form class="form-create">
+                    <div class="mb-3">
+                        <input type="text" name="documento" class="form-control" placeholder="Documento" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" name="nombre" class="form-control" placeholder="Nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" name="nombre_equipo_rival" class="form-control" placeholder="Nombre del equipo rival" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" name="telefono" class="form-control" placeholder="Teléfono">
+                    </div>
+                    <div class="mb-3">
+                        <input type="email" name="email" class="form-control" placeholder="Correo electrónico">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" name="eps" class="form-control" placeholder="EPS">
+                    </div>
+                    <button type="button" class="btn btn-primary btn-create">Agregar</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-lg p-4 rounded-4 card-list">
+            <h2 class="text-center mb-4">Jugadores Rivales</h2>
+            {% for jugador in jugadores_rivales_lista %}
+                <div class="border p-3 mb-3 rounded bg-white" data-id="{{ jugador.documento }}">
+                    <div class="mb-2"><strong>Documento:</strong> <span class="item-value documento">{{ jugador.documento }}</span></div>
+                    <div class="mb-2"><strong>Nombre:</strong> <span class="item-value nombre">{{ jugador.nombre }}</span></div>
+                    <div class="mb-2"><strong>Equipo Rival:</strong> <span class="item-value nombre_equipo_rival">{{ jugador.nombre_equipo_rival }}</span></div>
+                    <div class="mb-2"><strong>Teléfono:</strong> <span class="item-value telefono">{{ jugador.telefono }}</span></div>
+                    <div class="mb-2"><strong>Email:</strong> <span class="item-value email">{{ jugador.email }}</span></div>
+                    <div class="mb-2"><strong>EPS:</strong> <span class="item-value eps">{{ jugador.eps }}</span></div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-warning btn-sm btn-edit" data-id="{{ jugador.documento }}">✏️ Editar</button>
+                        <button class="btn btn-danger btn-sm btn-delete" data-id="{{ jugador.documento }}">🗑️ Eliminar</button>
+                    </div>
+                    <div class="form-edit d-none mt-3" data-id="{{ jugador.documento }}">
+                        <input name="nombre" class="form-control mb-2" value="{{ jugador.nombre }}">
+                        <input name="nombre_equipo_rival" class="form-control mb-2" value="{{ jugador.nombre_equipo_rival }}">
+                        <input name="telefono" class="form-control mb-2" value="{{ jugador.telefono }}">
+                        <input name="email" class="form-control mb-2" value="{{ jugador.email }}">
+                        <input name="eps" class="form-control mb-2" value="{{ jugador.eps }}">
+                        <button class="btn btn-sm btn-save" data-id="{{ jugador.documento }}">Guardar</button>
+                        <button class="btn btn-sm btn-cancel" data-id="{{ jugador.documento }}">Cancelar</button>
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-center">No se encontraron jugadores rivales</p>
+            {% endfor %}
+        </div>
     </div>
-  </div>
 
-  <script>
-    document.getElementById("crearJugadorRival").addEventListener("click", function () {
-      const documento = document.getElementById("documento").value;
-      const nombre = document.getElementById("nombre").value;
-      const nombreEquipoRival = document.getElementById("nombreEquipoRival").value;
-      const telefono = document.getElementById("telefono").value;
-      const email = document.getElementById("email").value;
-      const eps = document.getElementById("eps").value;
-
-      if (!documento.trim() || !nombre.trim() || !nombreEquipoRival.trim()) {
-        alert("Documento, nombre y equipo rival son obligatorios.");
-        return;
-      }
-
-      fetch("/jugadores_rivales", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ documento, nombre, nombre_equipo_rival: nombreEquipoRival, telefono, email, eps })
-      })
-      .then(response => {
-        if (response.ok) {
-          return response.json();
-        } else {
-          throw new Error("Error al agregar el jugador rival.");
-        }
-      })
-      .then(data => {
-        console.log("Jugador rival agregado:", data);
-        window.location.reload();
-      })
-      .catch(error => {
-        console.error("Error:", error);
-        alert("Hubo un problema al agregar el jugador rival.");
-      });
-    });
-
-    document.querySelectorAll(".editar-jugador").forEach(button => {
-      button.addEventListener("click", function () {
-        const jugadorId = this.getAttribute("data-id");
-        document.getElementById(`formulario-${jugadorId}`).classList.toggle("d-none");
-      });
-    });
-
-    document.querySelectorAll(".guardar-jugador").forEach(button => {
-      button.addEventListener("click", function () {
-        const jugadorId = this.getAttribute("data-id");
-        const nombre = document.getElementById(`nombre-${jugadorId}`).value;
-        const equipo = document.getElementById(`equipo-${jugadorId}`).value;
-        const telefono = document.getElementById(`telefono-${jugadorId}`).value;
-        const email = document.getElementById(`email-${jugadorId}`).value;
-        const eps = document.getElementById(`eps-${jugadorId}`).value;
-
-        fetch(`/jugadores_rivales/${jugadorId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nombre, nombre_equipo_rival: equipo, telefono, email, eps })
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log("Jugador rival actualizado:", data);
-          window.location.reload();
-        })
-        .catch(error => console.error("Error:", error));
-      });
-    });
-
-    document.querySelectorAll(".cancelar-edicion").forEach(button => {
-      button.addEventListener("click", function () {
-        const jugadorId = this.getAttribute("data-id");
-        document.getElementById(`formulario-${jugadorId}`).classList.add("d-none");
-      });
-    });
-
-    function confirmarEliminacion() {
-      return confirm("¿Estás seguro de que quieres eliminar este jugador rival?");
-    }
-
-    document.querySelectorAll(".eliminar-jugador").forEach(button => {
-      button.addEventListener("click", function () {
-        const jugadorId = this.getAttribute("data-id");
-        if (!confirm("¿Estás seguro de que quieres eliminar este jugador rival?")) {
-          return;
-        }
-
-        fetch(`/jugadores_rivales/${jugadorId}`, {
-          method: "DELETE"
-        })
-        .then(response => {
-          if (response.ok) {
-            window.location.reload();
-          } else {
-            alert("Error al eliminar el jugador rival");
-          }
-        })
-        .catch(error => console.error("Error:", error));
-      });
-    });
-  </script>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/crud_general.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

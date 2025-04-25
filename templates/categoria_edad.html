@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Categoría por Edad</title>
+  <title>Gestión de Categorías de Edad</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
@@ -22,7 +22,12 @@
   </style>
 </head>
 <body>
-  <div class="card-container">
+  <div id="crud-container" 
+     data-base-url="{{ url_for('categoria_edad.create') }}" 
+     data-list-url="{{ url_for('categoria_edad.categoria_edad_page') }}" 
+     class="card-container">
+
+    <!-- Formulario de Búsqueda -->
     <div class="mb-4">
       <form method="GET" action="{{ url_for('categoria_edad.categoria_edad_page') }}" class="d-flex">
         <input type="text" name="q" class="form-control me-2" placeholder="Buscar categoría..." value="{{ q }}">
@@ -30,146 +35,58 @@
       </form>
     </div>
 
+    <!-- Botón para crear nueva categoría de edad -->
     <div class="text-center mb-3">
       <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#formPanel" aria-expanded="false" aria-controls="formPanel">
-        ➕ Crear Nueva Categoría
+        ➕ Crear Nueva Categoría de Edad
       </button>
     </div>
 
+    <!-- Formulario para crear nueva categoría -->
     <div class="collapse mb-4" id="formPanel">
       <div class="card card-body">
-        <form id="crearCategoriaForm">
+        <form class="form-create">
           <div class="mb-3">
-            <input type="text" id="nombreCategoria" name="nombre" class="form-control" placeholder="Escribe el nombre de la categoría" required>
+            <input type="text" name="nombre" class="form-control" placeholder="Escribe el nombre de la categoría" required>
           </div>
           <div class="mb-3">
-            <input type="text" id="descripcionCategoria" name="descripcion" class="form-control" placeholder="Escribe la descripcion de la categoría" required>
+            <input type="text" name="descripcion" class="form-control" placeholder="Escribe la descripción de la categoría" required>
           </div>
-          <button id="crearCategoria" type="button" class="btn btn-primary">Crear</button>
+          <button type="button" class="btn btn-primary btn-create">Crear</button>
         </form>
       </div>
     </div>
 
+    <!-- Lista de Categorías de Edad -->
     <div class="card shadow-lg p-4 rounded-4 card-list">
-      <h2 class="text-center mb-4">Categorías por Edad</h2>
-      {% for categoria_edad in categorias_edad %}
-        <div class="border p-3 mb-3 rounded bg-white">
-          <div class="mb-2"><strong>Id:</strong> {{ categoria_edad.id_categoria_edad }}</div>
-          <div class="mb-2"><strong>Nombre:</strong> {{ categoria_edad.nombre }}</div>
-          <div class="mb-2"><strong>Descripcion:</strong> {{ categoria_edad.descripcion }}</div>
+      <h2 class="text-center mb-4">Categorías de Edad</h2>
+      {% for categoria in categorias_edad %}
+        <div class="border p-3 mb-3 rounded bg-white" data-id="{{ categoria.id_categoria_edad }}">
+          <div class="mb-2"><strong>Nombre:</strong> <span class="item-value nombre">{{ categoria.nombre }}</span></div>
+          <div class="mb-2"><strong>Descripción:</strong> <span class="item-value descripcion">{{ categoria.descripcion }}</span></div>
           <div class="d-flex gap-2">
-            <button class="btn btn-warning btn-sm editar-categoria" data-id="{{ categoria_edad.id_categoria_edad }}" data-nombre="{{ categoria_edad.nombre }}" data-descripcion="{{ categoria_edad.descripcion }}">✏️ Editar</button>
-            <form method="POST" action="{{ url_for('categoria_edad.delete', id=categoria_edad.id_categoria_edad) }}" onsubmit="return confirmarEliminacion()">
-                <button type="button" class="btn btn-danger btn-sm eliminar-categoria" data-id="{{ categoria_edad.id_categoria_edad }}">
-                    🗑️ Eliminar
-                  </button>
-            </form>
+            <button class="btn btn-warning btn-sm btn-edit" data-id="{{ categoria.id_categoria_edad }}">✏️ Editar</button>
+            <button class="btn btn-danger btn-sm btn-delete" data-id="{{ categoria.id_categoria_edad }}">🗑️ Eliminar</button>
           </div>
-          <div class="editar-formulario d-none mt-3" id="formulario-{{ categoria_edad.id_categoria_edad }}">
-            <input type="text" id="nombreCategoria-{{ categoria_edad.id_categoria_edad }}" class="form-control mb-2" value="{{ categoria_edad.nombre }}">
-            <input type="text" id="descripcionCategoria-{{ categoria_edad.id_categoria_edad }}" class="form-control mb-2" value="{{ categoria_edad.descripcion }}">
-            <button class="btn btn-primary btn-sm guardar-categoria" data-id="{{ categoria_edad.id_categoria_edad }}">Guardar</button>
-            <button class="btn btn-secondary btn-sm cancelar-edicion" data-id="{{ categoria_edad.id_categoria_edad }}">Cancelar</button>
+
+          <!-- Formulario de edición (oculto inicialmente) -->
+          <div class="form-edit d-none mt-3" data-id="{{ categoria.id_categoria_edad }}">
+            <input name="nombre" class="form-control mb-2" value="{{ categoria.nombre }}">
+            <input name="descripcion" class="form-control mb-2" value="{{ categoria.descripcion }}">
+            <button class="btn btn-sm btn-save" data-id="{{ categoria.id_categoria_edad }}">Guardar</button>
+            <button class="btn btn-sm btn-cancel" data-id="{{ categoria.id_categoria_edad }}">Cancelar</button>
           </div>
         </div>
       {% else %}
-        <p class="text-center">No se encontraron categorías</p>
+        <p class="text-center">No se encontraron categorías de edad.</p>
       {% endfor %}
     </div>
   </div>
 
-  <script>
-  document.getElementById("crearCategoria").addEventListener("click", function () {
-    const nombreCategoria = document.getElementById("nombreCategoria").value;
-    const descripcionCategoria = document.getElementById("descripcionCategoria").value;
+  <!-- Script para manejar la lógica CRUD (generalizado) -->
+  <script src="{{ url_for('static', filename='js/crud_general.js') }}"></script>
 
-    if (!nombreCategoria.trim()) {
-      alert("El nombre de la categoría no puede estar vacío.");
-      return;
-    }
-
-    fetch("/categoria_edad", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre: nombreCategoria, descripcion: descripcionCategoria })
-    })
-    .then(response => {
-      if (response.ok) {
-        return response.json();
-      } else {
-        throw new Error("Error al crear la categoría.");
-      }
-    })
-    .then(data => {
-      console.log("Categoría creada:", data);
-      window.location.reload(); // Recargar la página para mostrar la nueva categoría
-    })
-    .catch(error => {
-      console.error("Error:", error);
-      alert("Hubo un problema al crear la categoría.");
-    });
-  });
-
-    document.querySelectorAll(".editar-categoria").forEach(button => {
-      button.addEventListener("click", function () {
-        const categoriaId = this.getAttribute("data-id");
-        document.getElementById(`formulario-${categoriaId}`).classList.toggle("d-none");
-      });
-    });
-
-    document.querySelectorAll(".guardar-categoria").forEach(button => {
-      button.addEventListener("click", function () {
-        const categoriaId = this.getAttribute("data-id");
-        const inputNombre = document.getElementById(`nombreCategoria-${categoriaId}`).value;
-        const inputDescripcion = document.getElementById(`descripcionCategoria-${categoriaId}`).value;
-
-        fetch(`/categoria_edad/${categoriaId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ "nombre": inputNombre, "descripcion": inputDescripcion })
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log("Categoría actualizada:", data);
-          window.location.reload();
-        })
-        .catch(error => console.error("Error:", error));
-      });
-    });
-
-    document.querySelectorAll(".cancelar-edicion").forEach(button => {
-      button.addEventListener("click", function () {
-        const categoriaId = this.getAttribute("data-id");
-        document.getElementById(`formulario-${categoriaId}`).classList.add("d-none");
-      });
-    });
-
-    function confirmarEliminacion() {
-      return confirm("¿Estás seguro de que quieres eliminar esta categoría?");
-    }
-
-    document.querySelectorAll(".eliminar-categoria").forEach(button => {
-        button.addEventListener("click", function () {
-        const categoriaId = this.getAttribute("data-id");
-        if (!confirm("¿Estás seguro de que quieres eliminar esta categoría?")) {
-            return;
-        }
-
-        fetch(`/categoria_edad/${categoriaId}`, {
-            method: "DELETE"
-        })
-        .then(response => {
-            if (response.ok) {
-            window.location.reload(); // Recargar la página después de eliminar
-            } else {
-            alert("Error al eliminar la categoría");
-            }
-        })
-        .catch(error => console.error("Error:", error));
-        });
-    });
-  </script>
-  
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

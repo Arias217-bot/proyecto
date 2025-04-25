@@ -71,8 +71,8 @@ def detalle_equipo(documento, nombre_equipo):
 
     # Obtener integrantes
     integrantes = (
-        db.session.query(Usuario, Rol, Posicion, Usuario_Equipo.numero)
-        .join(Usuario_Equipo, Usuario.documento == Usuario_Equipo.documento)
+        db.session.query(Usuario_Equipo, Usuario, Rol, Posicion, Usuario_Equipo.numero)
+        .join(Usuario, Usuario.documento == Usuario_Equipo.documento)
         .outerjoin(Rol, Usuario_Equipo.id_rol == Rol.id_rol)
         .outerjoin(Posicion, Usuario_Equipo.id_posicion == Posicion.id_posicion)
         .filter(Usuario_Equipo.id_equipo == equipo.id_equipo)
@@ -81,13 +81,14 @@ def detalle_equipo(documento, nombre_equipo):
 
     integrantes_lista = [
         {
+            "id_usuario_equipo": usuario_equipo.id_usuario_equipo,
             "documento": usuario.documento,
             "nombre": usuario.nombre,
             "rol": rol.nombre if rol else "Sin rol",
             "posicion": posicion.nombre if posicion else "Sin posición",
             "numero": numero
         }
-        for usuario, rol, posicion, numero in integrantes
+        for usuario_equipo, usuario, rol, posicion, numero in integrantes
     ]
 
     # Verificar mensajes con autor
@@ -148,54 +149,3 @@ def detalle_equipo(documento, nombre_equipo):
         mensajes=mensajes_lista,
         torneos=torneos_lista,
     )
-
-@equipo_bp.route('/integrantes/crear', methods=['POST'])
-def crear_integrante():
-    data = request.json
-    documento = data.get('documento')
-    id_rol = data.get('rol')
-    id_posicion = data.get('posicion')
-    id_equipo = data.get('id_equipo')
-    numero = data.get('numero')  # Se obtiene el valor de número desde el JSON
-
-    nuevo_integrante = Usuario_Equipo(
-        documento=documento,
-        id_equipo=id_equipo,
-        id_rol=id_rol,
-        id_posicion=id_posicion,
-        numero=numero  # Se utiliza el valor digitado en la solicitud
-    )
-    db.session.add(nuevo_integrante)
-    db.session.commit()
-
-    return jsonify({"mensaje": "Integrante creado exitosamente"}), 201
-
-@equipo_bp.route('/integrantes/editar', methods=['POST'])
-def editar_integrante():
-    data = request.json
-    documento = data.get('documento')
-    id_equipo = data.get('id_equipo')
-    id_rol = data.get('rol')
-    id_posicion = data.get('posicion')
-    numero = data.get('numero')
-
-    integrante = Usuario_Equipo.query.filter_by(documento=documento, id_equipo=id_equipo).first()
-    if not integrante:
-        return jsonify({"error": "Integrante no encontrado"}), 404
-
-    integrante.id_rol = id_rol
-    integrante.id_posicion = id_posicion
-    integrante.numero = numero
-    db.session.commit()
-
-    return jsonify({"mensaje": "Integrante actualizado correctamente"}), 200
-
-@equipo_bp.route('/integrantes/borrar', methods=['POST'])
-def borrar_integrantes():
-    data = request.json
-    documentos = data.get('documentos', [])
-
-    Usuario_Equipo.query.filter(Usuario_Equipo.documento.in_(documentos)).delete(synchronize_session=False)
-    db.session.commit()
-
-    return jsonify({"mensaje": "Integrantes eliminados exitosamente"}), 200
