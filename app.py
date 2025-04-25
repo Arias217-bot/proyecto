@@ -122,19 +122,11 @@ def inject_documento():
     except:
         return {'documento': None}
 
-@app.route('/partido')
-def partido():
-    return render_template('partido.html')
-
-
 @app.route('/')
 def home():
     documento = session.get('documento')  # o de la base de datos, o fijo para pruebas
     return render_template('base.html', documento=documento)
 
-@app.route('/administrador')
-def administrador():
-    return render_template('administrador.html')
 
 @app.route('/perfil', methods=['GET','PUT'])
 def actualizar_usuario():

@@ -86,7 +86,8 @@
         const saveButton = document.getElementById('save-button');
         const cancelButton = document.getElementById('cancel-button');
         const formInputs = document.querySelectorAll('#edit-profile-form input, #edit-profile-form select, #edit-profile-form textarea');
-
+        const formElement = document.getElementById('edit-profile-form');
+    
         editButton.addEventListener('click', function() {
             formInputs.forEach(input => {
                 input.disabled = false;
@@ -95,7 +96,7 @@
             saveButton.style.display = 'inline-block';
             cancelButton.style.display = 'inline-block';
         });
-
+    
         cancelButton.addEventListener('click', function(event) {
             event.preventDefault(); // Evita que el formulario se envíe
             formInputs.forEach(input => {
@@ -104,67 +105,50 @@
             editButton.style.display = 'inline-block';
             saveButton.style.display = 'none';
             cancelButton.style.display = 'none';
-            // Restaura los valores originales del formulario
-            document.getElementById('email').value = "{{ usuario.email }}";
-            document.getElementById('fecha_nacimiento').value = "{{ usuario.fecha_nacimiento }}";
-            document.getElementById('sexo').value = "{{ usuario.sexo }}";
-            document.getElementById('telefono').value = "{{ usuario.telefono }}";
-            document.getElementById('direccion').value = "{{ usuario.direccion }}";
-            document.getElementById('experiencia').value = "{{ usuario.experiencia }}";
+            // Restaura los valores originales del formulario (puedes recargar la página si prefieres)
+            window.location.reload();
         });
-
-        document.getElementById('edit-profile-form').addEventListener('submit', async function(event) {
+    
+        formElement.addEventListener('submit', async function(event) {
             event.preventDefault(); // Evita que el formulario se envíe de forma predeterminada
-
-            // Crear un objeto con los datos del formulario
-            const formData = {
-            email: document.getElementById('email').value="{{ usuario.email }}",
-            fecha_nacimiento: document.getElementById('fecha_nacimiento').value="{{ usuario.fecha_nacimiento }}",
-            sexo: document.getElementById('sexo').value="{{ usuario.sexo }}",
-            telefono: document.getElementById('telefono').value="{{ usuario.telefono }}",
-            peso: document.getElementById('peso').value="{{ usuario.peso }}",
-            altura: document.getElementById('altura').value="{{ usuario.altura }}",
-            direccion: document.getElementById('direccion').value="{{ usuario.direccion }}",
-            img: document.getElementById('img').files[0], 
-            brado: document.getElementById('brado').value="{{ usuario.brado }}",
-            experiencia: document.getElementById('experiencia').value="{{ usuario.experiencia }}"
-            };
+    
+            const formData = new FormData(formElement);
+    
             try {
-            // Realizamos la petición PUT a la ruta correspondiente
-            const response = await fetch('/perfil', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                alert("Perfil actualizado correctamente.");
-                window.location.href='/perfil'; // Redirigir a la página de perfil
-            } else {
-                alert(data.error || "Error al actualizar el perfil.");
-            }
+                const response = await fetch('/perfil', {
+                    method: 'PUT',
+                    body: formData
+                });
+    
+                const data = await response.json();
+    
+                if (response.ok) {
+                    alert("Perfil actualizado correctamente.");
+                    window.location.href = '/perfil'; // Redirigir a la página de perfil
+                } else {
+                    alert(data.error || "Error al actualizar el perfil.");
+                }
             } catch (error) {
-            console.error('Error al actualizar el perfil:', error);
-            alert("Error de conexión.");
+                console.error('Error al actualizar el perfil:', error);
+                alert("Error de conexión.");
             }
         });
-
+    
         document.getElementById("delete-button").addEventListener("click", function() {
-        if (confirm("¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.")) {
-            fetch("/usuarios/{{ usuario.documento }}", {
-                method: "DELETE"
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert("Usuario eliminado correctamente");
-                window.location.href = "/login"; 
-            })
-            .catch(error => console.error("Error al eliminar el usuario:", error));
-        }
+            if (confirm("¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.")) {
+                fetch("/usuarios/{{ usuario.documento }}", {
+                    method: "DELETE"
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert("Usuario eliminado correctamente");
+                    window.location.href = "/login"; 
+                })
+                .catch(error => console.error("Error al eliminar el usuario:", error));
+            }
+        });
     });
-    });
-</script>
+    </script>
+    
 
 {% endblock %}
