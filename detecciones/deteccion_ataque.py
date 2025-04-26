@@ -80,10 +80,6 @@ def detectar_ataque(landmarks, angulos_anteriores=None, tiempo=1, tolerancia_sim
         # Calcular simetría entre los brazos
         simetria = abs(angulo_codo_izq - angulo_codo_der) < tolerancia_simetria  # Tolerancia ajustable
 
-        # Placeholder para estabilidad y movimiento controlado
-        estabilidad = True  # Implementar lógica real si es necesario
-        movimiento_controlado = True  # Implementar lógica real si es necesario
-
         # Mensajes descriptivos
         mensajes = [
             f"Ángulo del codo izquierdo: {angulo_codo_izq:.2f}° ({'válido' if ataque_valido_izq else 'no válido'})",
@@ -92,9 +88,7 @@ def detectar_ataque(landmarks, angulos_anteriores=None, tiempo=1, tolerancia_sim
             f"Velocidad angular codo derecho: {velocidad_angular_der:.2f}°/s",
             f"Ataque {'válido' if ataque_valido else 'no válido'}",
             f"Contacto con el balón: {'correcto' if contacto_valido else 'incorrecto'}",
-            f"Simetría entre brazos: {'Correcta' if simetria else 'Incorrecta'}",
-            f"Estabilidad: {'Correcta' if estabilidad else 'Incorrecta'}",
-            f"Movimiento controlado: {'Correcto' if movimiento_controlado else 'Incorrecto'}"
+            f"Simetría entre brazos: {'Correcta' if simetria else 'Incorrecta'}"
         ]
 
         # Salida estructurada
@@ -102,7 +96,7 @@ def detectar_ataque(landmarks, angulos_anteriores=None, tiempo=1, tolerancia_sim
             "mensajes": mensajes,
             "datos": [
                 angulo_codo_izq, angulo_codo_der, velocidad_angular_izq, velocidad_angular_der,
-                ataque_valido, contacto_valido, simetria, estabilidad, movimiento_controlado
+                ataque_valido, contacto_valido, simetria
             ]
         }
 
@@ -110,5 +104,12 @@ def detectar_ataque(landmarks, angulos_anteriores=None, tiempo=1, tolerancia_sim
         print(f"Error en detectar_ataque: {e}")
         return {
             "mensajes": ["Error en la detección del ataque"],
-            "datos": [None, None, None, None, None, None, None, None, None]
+            "datos": [None, None, None, None, None, None, None]
         }
+
+def obtener_encabezados_ataque():
+    """Devuelve los encabezados específicos para la detección de ataque."""
+    return [
+        "Angulo Codo Izq", "Angulo Codo Der", "Velocidad Angular Codo Izq", "Velocidad Angular Codo Der",
+        "Ataque Valido", "Contacto Valido", "Simetria"
+    ]

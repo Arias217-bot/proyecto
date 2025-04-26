@@ -1,6 +1,5 @@
 import math
 from mediapipe.python.solutions.pose import PoseLandmark
-from evaluaciones import evaluar_estabilidad  # Si se cuenta con una implementación real
 
 def calcular_angulo(p1, p2, p3):
     """Calcula el ángulo entre tres puntos."""
@@ -32,10 +31,10 @@ def detectar_bloqueo(landmarks, tolerancia_simetria=15):
         
     Returns:
         dict: Resultados de la evaluación con mensajes y datos relevantes.
-              Los datos retornados deben tener 9 columnas para que, junto con el "Frame",
-              se obtengan 10 columnas en el CSV:
+              Los datos retornados deben tener 8 columnas para que, junto con el "Frame",
+              se obtengan 9 columnas en el CSV:
               [Angulo Brazo Izq, Angulo Brazo Der, Altura Bloqueo Izq, Altura Bloqueo Der, 
-               Alineación Tronco, Bloqueo Válido, Separación de Manos, Simetría, Estabilidad]
+               Alineación Tronco, Bloqueo Válido, Separación de Manos, Simetría]
     """
     try:
         # Validar landmarks necesarios
@@ -78,7 +77,7 @@ def detectar_bloqueo(landmarks, tolerancia_simetria=15):
         if None in [angulo_brazos_izq, angulo_brazos_der, altura_bloqueo_izq,
                     altura_bloqueo_der, angulo_tronco, separacion_manos]:
             return {"mensajes": ["No se pudieron calcular algunos valores."],
-                    "datos": [None] * 9}
+                    "datos": [None] * 8}
 
         # Criterios de bloqueo válido
         bloqueo_valido_izq = angulo_brazos_izq > 160 and altura_bloqueo_izq < 0.5
@@ -89,9 +88,6 @@ def detectar_bloqueo(landmarks, tolerancia_simetria=15):
         # Calcular simetría entre los brazos
         simetria = abs(angulo_brazos_izq - angulo_brazos_der) < tolerancia_simetria
 
-        # Evaluar estabilidad (se puede usar evaluar_estabilidad si está implementada)
-        estabilidad = True  # Se asume True por ahora; ajustar si se cuenta con una evaluación real
-
         # Mensajes descriptivos
         mensajes = [
             f"Ángulo brazo izquierdo: {angulo_brazos_izq:.2f}° ({'Correcto' if bloqueo_valido_izq else 'Incorrecto'})",
@@ -101,13 +97,12 @@ def detectar_bloqueo(landmarks, tolerancia_simetria=15):
             f"Tronco {'Alineado' if tronco_alineado else 'Desalineado'}",
             f"Bloqueo {'Válido' if bloqueo_valido else 'No válido'}",
             f"Separación de manos: {separacion_manos:.2f}",
-            f"Simetría entre brazos: {'Correcta' if simetria else 'Incorrecta'}",
-            f"Estabilidad: {'Correcta' if estabilidad else 'Inadecuada'}"
+            f"Simetría entre brazos: {'Correcta' if simetria else 'Incorrecta'}"
         ]
 
         # Retornar los datos en el orden esperado:
         # [Angulo Brazo Izq, Angulo Brazo Der, Altura Bloqueo Izq, Altura Bloqueo Der,
-        #  Alineación Tronco, Bloqueo Válido, Separación de Manos, Simetría, Estabilidad]
+        #  Alineación Tronco, Bloqueo Válido, Separación de Manos, Simetría]
         return {
             "mensajes": mensajes,
             "datos": [
@@ -118,8 +113,7 @@ def detectar_bloqueo(landmarks, tolerancia_simetria=15):
                 angulo_tronco,
                 bloqueo_valido,
                 separacion_manos,
-                simetria,
-                estabilidad
+                simetria
             ]
         }
 
@@ -127,5 +121,12 @@ def detectar_bloqueo(landmarks, tolerancia_simetria=15):
         print(f"Error en detectar_bloqueo: {e}")
         return {
             "mensajes": ["Error en la detección de bloqueo"],
-            "datos": [None] * 9
+            "datos": [None] * 8
         }
+
+def obtener_encabezados_bloqueo():
+    """Devuelve los encabezados específicos para la detección de bloqueo."""
+    return [
+        "Angulo Brazo Izq", "Angulo Brazo Der", "Altura Bloqueo Izq", "Altura Bloqueo Der",
+        "Alineación Tronco", "Bloqueo Válido", "Separación de Manos", "Simetría"
+    ]

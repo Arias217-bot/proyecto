@@ -1,6 +1,6 @@
 import math
 from mediapipe.python.solutions.pose import PoseLandmark
-from evaluaciones import evaluar_contacto, evaluar_posicion, evaluar_movimiento, evaluar_estabilidad, evaluar_sentadillas
+from evaluaciones import evaluar_contacto, evaluar_posicion, evaluar_movimiento, evaluar_sentadillas
 
 def calcular_angulo(a, b, c):
     """Calcula el ángulo entre tres puntos en coordenadas de píxeles."""
@@ -53,7 +53,6 @@ def detectar_postura(landmarks):
             posicion_correcta = evaluar_posicion(landmarks)
             contacto_brazos = evaluar_contacto([landmarks[PoseLandmark.LEFT_WRIST.value],
                                                 landmarks[PoseLandmark.RIGHT_WRIST.value]])
-            estabilidad = evaluar_estabilidad(landmarks)
             sentadilla_correcta = evaluar_sentadillas(landmarks)
             movimiento_excesivo = evaluar_movimiento(landmarks)
 
@@ -61,7 +60,6 @@ def detectar_postura(landmarks):
                 "angulo_codo": angulo_codo,
                 "posicion_correcta": posicion_correcta,
                 "contacto_brazos": contacto_brazos,
-                "estabilidad": estabilidad,
                 "sentadilla_correcta": sentadilla_correcta,
                 "movimiento_excesivo": movimiento_excesivo
             }
@@ -73,7 +71,6 @@ def detectar_postura(landmarks):
             mensajes.append(f"{lado.capitalize()} - Ángulo del codo: {evals['angulo_codo']:.2f}°")
             mensajes.append(f"{lado.capitalize()} - Posición corporal: {'Correcta' if evals['posicion_correcta'] else 'Incorrecta'}")
             mensajes.append(f"{lado.capitalize()} - Contacto con el balón: {'Correcto' if evals['contacto_brazos'] else 'Incorrecto'}")
-            mensajes.append(f"{lado.capitalize()} - Estabilidad: {'Correcta' if evals['estabilidad'] else 'Incorrecta'}")
             mensajes.append(f"{lado.capitalize()} - Sentadilla: {'Correcta' if evals['sentadilla_correcta'] else 'Incorrecta'}")
             mensajes.append(f"{lado.capitalize()} - Movimiento: {'Controlado' if not evals['movimiento_excesivo'] else 'Excesivo'}")
 
@@ -82,7 +79,6 @@ def detectar_postura(landmarks):
                 evals["angulo_codo"],
                 evals["posicion_correcta"],
                 evals["contacto_brazos"],
-                evals["estabilidad"],
                 evals["sentadilla_correcta"],
                 not evals["movimiento_excesivo"]
             ])
@@ -97,5 +93,5 @@ def detectar_postura(landmarks):
         print(f"Error en detectar_postura: {e}")
         return {
             "mensajes": ["Error en la detección de la postura"],
-            "datos": [None] * 12  # 6 datos por lado (izquierdo y derecho)
+            "datos": [None] * 10  # 5 datos por lado (izquierdo y derecho)
         }

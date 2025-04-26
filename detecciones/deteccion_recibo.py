@@ -1,7 +1,7 @@
 import math
 import logging
 from mediapipe.python.solutions.pose import PoseLandmark
-from evaluaciones import evaluar_sentadillas, evaluar_contacto, evaluar_posicion, evaluar_movimiento, evaluar_estabilidad
+from evaluaciones import evaluar_sentadillas, evaluar_contacto, evaluar_posicion, evaluar_movimiento
 
 logging.basicConfig(level=logging.ERROR)
 
@@ -32,9 +32,9 @@ def detectar_recibo(landmarks):
         landmarks (list): Lista de landmarks detectados por MediaPipe.
     Returns:
         dict: Resultados de la evaluación con mensajes y datos relevantes.
-              La lista "datos" contiene 7 elementos:
+              La lista "datos" contiene 6 elementos:
                 [Ángulo del Tronco, Profundidad de Sentadilla, Posición Correcta, 
-                 Contacto de Brazos, Estabilidad, Movimiento Controlado, Distancia Entre Pies]
+                 Contacto de Brazos, Movimiento Controlado, Distancia Entre Pies]
     """
     try:
         # Validar landmarks
@@ -73,7 +73,6 @@ def detectar_recibo(landmarks):
         # Evaluaciones
         posicion_correcta = evaluar_posicion(landmarks)
         contacto_brazos = evaluar_contacto(manos)
-        estabilidad = evaluar_estabilidad(landmarks)
         sentadilla_correcta = evaluar_sentadillas(profundidad_sentadilla)
         movimiento_excesivo = evaluar_movimiento(landmarks)
 
@@ -86,12 +85,11 @@ def detectar_recibo(landmarks):
             f"Profundidad de sentadilla: {'Correcta' if sentadilla_correcta else 'Incorrecta'}",
             f"Posición corporal: {'Adecuada' if posicion_correcta else 'Inadecuada'}",
             f"Contacto con el balón: {'Correcto' if contacto_brazos else 'Incorrecto'}",
-            f"Estabilidad: {'Correcta' if estabilidad else 'Inadecuada'}",
             f"Movimiento: {'Controlado' if not movimiento_excesivo else 'Excesivo'}",
             f"Distancia entre pies: {distancia_pies:.2f}"
         ]
 
-        # Salida estructurada con 7 columnas en "datos"
+        # Salida estructurada con 6 columnas en "datos"
         return {
             "mensajes": mensajes,
             "datos": [
@@ -99,7 +97,6 @@ def detectar_recibo(landmarks):
                 profundidad_sentadilla,
                 posicion_correcta,
                 contacto_brazos,
-                estabilidad,
                 not movimiento_excesivo,  # Indica "Movimiento Controlado" (True si es controlado)
                 distancia_pies
             ]
@@ -109,5 +106,12 @@ def detectar_recibo(landmarks):
         logging.error(f"Error en detectar_recibo: {e}", exc_info=True)
         return {
             "mensajes": ["Error en la detección del recibo"],
-            "datos": [None, None, None, None, None, None, None]
+            "datos": [None, None, None, None, None, None]
         }
+
+def obtener_encabezados_recibo():
+    """Devuelve los encabezados específicos para la detección de recibo."""
+    return [
+        "Angulo Tronco", "Profundidad Sentadilla", "Posicion Correcta", 
+        "Contacto Brazos", "Movimiento Controlado", "Distancia Entre Pies"
+    ]

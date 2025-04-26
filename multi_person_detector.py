@@ -4,6 +4,7 @@ import tensorflow as tf
 import tensorflow_hub as hub
 import os
 import csv
+from models.classify_pose import ClassifyPose  # Importar la clase ClassifyPose
 
 class MultiPersonDetector:
     def __init__(self, model_url, output_dir="Salidas"):
@@ -17,6 +18,7 @@ class MultiPersonDetector:
         self.model = hub.load(model_url)
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)  # Crear la carpeta de salida si no existe
+        self.pose_classifier = ClassifyPose()  # Inicializar la clase ClassifyPose
 
     def detect_poses(self, frame):
         """
@@ -47,8 +49,12 @@ class MultiPersonDetector:
         """
         for person_id, person in enumerate(keypoints_with_scores[0]):
             keypoints = person[:51].reshape((17, 3))  # 17 puntos, cada uno con (x, y, score)
+            keypoints_list = keypoints.flatten().tolist()  # Convertir a lista para ClassifyPose
+            action = self.pose_classifier.classify([keypoints_list])  # Clasificar acción
+            action_label = action.get(f"persona_{person_id}", "Indeterminado")
+
             for keypoint_id, (x, y, score) in enumerate(keypoints):
-                csv_writer.writerow([frame_id, person_id, keypoint_id, x, y, score])
+                csv_writer.writerow([frame_id, person_id, keypoint_id, x, y, score, action_label])
 
     def process_video_or_camera(self, source, output_video_path, output_csv_path):
         """
@@ -71,7 +77,7 @@ class MultiPersonDetector:
 
         with open(output_csv_path, mode='w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(["frame_id", "person_id", "keypoint_id", "x", "y", "score"])  # Encabezado CSV
+            writer.writerow(["frame_id", "person_id", "keypoint_id", "x", "y", "score", "action"])  # Encabezado CSV
 
             frame_id = 0
             while cap.isOpened():
@@ -82,15 +88,21 @@ class MultiPersonDetector:
                 keypoints_with_scores = self.detect_poses(frame)
                 self.save_keypoints_to_csv(writer, keypoints_with_scores, frame_id)
 
-                # Dibujar los keypoints en el frame
+                # Dibujar los keypoints y las acciones en el frame
                 height, width, _ = frame.shape
-                for person in keypoints_with_scores[0]:
+                for person_id, person in enumerate(keypoints_with_scores[0]):
                     keypoints = person[:51].reshape((17, 3))
+                    action = self.pose_classifier.classify([keypoints.flatten().tolist()])
+                    action_label = action.get(f"persona_{person_id}", "Indeterminado")
+
                     for x, y, score in keypoints:
                         if score > 0.5:
                             cx = int(x * width)
                             cy = int(y * height)
                             cv2.circle(frame, (cx, cy), 5, (0, 255, 0), -1)
+
+                    # Mostrar la acción detectada en el frame
+                    cv2.putText(frame, action_label, (10, 30 + person_id * 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
                 out.write(frame)  # Guardar el frame procesado en el video
                 cv2.imshow("Procesando...", frame)

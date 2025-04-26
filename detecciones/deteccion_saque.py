@@ -1,6 +1,6 @@
 import math
 from mediapipe.python.solutions.pose import PoseLandmark
-from evaluaciones import evaluar_estabilidad, evaluar_contacto
+from evaluaciones import evaluar_contacto
 
 def calcular_angulo(p1, p2, p3):
     """Calcula el ángulo entre tres puntos."""
@@ -52,9 +52,6 @@ def detectar_saque(landmarks):
         # Evaluar contacto con el balón
         contacto_valido = evaluar_contacto(landmarks)
 
-        # Evaluar estabilidad del tronco
-        estabilidad = evaluar_estabilidad(landmarks)
-
         # Evaluar si el saque es válido: se esperan condiciones correctas en todos los parámetros
         saque_valido = angulo_codo > 90 and altura_brazo_correcta and alineacion_hombro and alineacion_codo and contacto_valido
 
@@ -65,7 +62,6 @@ def detectar_saque(landmarks):
             f"Alineación del hombro: {'Correcta' if alineacion_hombro else 'Incorrecta'}",
             f"Alineación del codo: {'Correcta' if alineacion_codo else 'Incorrecta'}",
             f"Contacto con el balón: {'Correcto' if contacto_valido else 'Incorrecto'}",
-            f"Estabilidad del tronco: {'Correcta' if estabilidad else 'Incorrecta'}",
             f"Saque {'válido' if saque_valido else 'no válido'}"
         ]
 
@@ -74,7 +70,7 @@ def detectar_saque(landmarks):
             "mensajes": mensajes,
             "datos": [
                 angulo_codo, altura_brazo_correcta, alineacion_hombro, 
-                alineacion_codo, contacto_valido, estabilidad, saque_valido
+                alineacion_codo, contacto_valido, saque_valido
             ]
         }
 
@@ -82,5 +78,12 @@ def detectar_saque(landmarks):
         print(f"Error en detectar_saque: {e}")
         return {
             "mensajes": ["Error en la detección del saque"],
-            "datos": [None, None, None, None, None, None, False]
+            "datos": [None, None, None, None, None, False]
         }
+
+def obtener_encabezados_saque():
+    """Devuelve los encabezados específicos para la detección de saque."""
+    return [
+        "Angulo Codo", "Altura Brazo", "Alineacion Hombro", 
+        "Alineacion Codo", "Contacto Balon", "Saque Valido"
+    ]

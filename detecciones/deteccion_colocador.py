@@ -1,6 +1,6 @@
 import math
 from mediapipe.python.solutions.pose import PoseLandmark
-from evaluaciones import evaluar_estabilidad, evaluar_movimiento
+from evaluaciones import evaluar_movimiento
 
 def calcular_angulo(a, b, c):
     """Calcula el ángulo entre tres puntos."""
@@ -73,10 +73,7 @@ def detectar_colocador(landmarks):
         # Verificar si los ángulos son válidos
         if None in [angulo_codo_izq, angulo_rodilla_izq, angulo_tronco_izq,
                     angulo_codo_der, angulo_rodilla_der, angulo_tronco_der]:
-            return {"mensajes": ["No se pudieron calcular algunos ángulos"], "datos": [None] * 11}
-
-        # Evaluar estabilidad del tronco
-        estabilidad = evaluar_estabilidad(landmarks)
+            return {"mensajes": ["No se pudieron calcular algunos ángulos"], "datos": [None] * 9}
 
         # Evaluar si las manos están sobre la frente
         manos_sobre_frente_izq = muñeca_izq.y < ceja_izq.y
@@ -89,7 +86,6 @@ def detectar_colocador(landmarks):
         mensajes = [
             f"Ángulo codo izquierdo: {angulo_codo_izq:.2f}°",
             f"Ángulo codo derecho: {angulo_codo_der:.2f}°",
-            f"Estabilidad del tronco: {'Correcta' if estabilidad else 'Incorrecta'}",
             f"Mano izquierda sobre la frente: {'Sí' if manos_sobre_frente_izq else 'No'}",
             f"Mano derecha sobre la frente: {'Sí' if manos_sobre_frente_der else 'No'}",
             f"Movimiento: {'Controlado' if movimiento_controlado else 'Excesivo'}"
@@ -101,7 +97,7 @@ def detectar_colocador(landmarks):
             "datos": [
                 angulo_codo_izq, angulo_rodilla_izq, angulo_tronco_izq, manos_sobre_frente_izq,
                 angulo_codo_der, angulo_rodilla_der, angulo_tronco_der, manos_sobre_frente_der,
-                estabilidad, movimiento_controlado
+                movimiento_controlado
             ]
         }
 
@@ -109,5 +105,13 @@ def detectar_colocador(landmarks):
         print(f"Error en detectar_colocador: {e}")
         return {
             "mensajes": ["Error en la detección del colocador"],
-            "datos": [None] * 10
+            "datos": [None] * 9
         }
+
+def obtener_encabezados_colocador():
+    """Devuelve los encabezados específicos para la detección del colocador."""
+    return [
+        "Angulo Codo Izq", "Angulo Rodilla Izq", "Angulo Tronco Izq", "Mano Izq Sobre Frente",
+        "Angulo Codo Der", "Angulo Rodilla Der", "Angulo Tronco Der", "Mano Der Sobre Frente",
+        "Movimiento Controlado"
+    ]
