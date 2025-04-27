@@ -14,6 +14,7 @@ from .mensajes_routes import mensajes_bp
 from .partido_routes import partido_bp
 from .usuario_equipo_routes import usuario_equipo_bp
 from .administrador_routes import administrador_bp
+from .videos_routes import videos_bp
 
 # Definir los blueprints aquí para importarlos fácilmente
 blueprints = [usuario_bp, 
@@ -30,4 +31,5 @@ blueprints = [usuario_bp,
               mensajes_bp,
               partido_bp,
               usuario_equipo_bp,
-              administrador_bp]
+              administrador_bp,
+              videos_bp]
