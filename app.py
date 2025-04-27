@@ -46,6 +46,8 @@ for bp in blueprints:
         app.register_blueprint(bp, url_prefix='/partido')
     elif bp.name == "usuario_equipo":
         app.register_blueprint(bp, url_prefix='/usuario_equipo')
+    elif bp.name == "videos":
+        app.register_blueprint(bp, url_prefix='/videos')
         
 app.register_blueprint(administrador_bp, url_prefix='/administrador')
 

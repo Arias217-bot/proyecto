@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('crud-container');
+    if (!container) return;
+
     const baseUrl   = container.dataset.baseUrl;
     const listUrl   = container.dataset.listUrl;
     

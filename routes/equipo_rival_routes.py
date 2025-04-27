@@ -1,25 +1,79 @@
 # routes/equipo_rival_routes.py
 from routes.entidad_routes import EntidadRoutes
 from models.equipo_rival import EquipoRival
-
-from flask import render_template, request
+from flask import render_template, request, jsonify
 from config import db
+# Importar servicios para procesamiento automático
+from services.extractor_service import (
+    extract_text_from_image,
+    extract_text_from_pdf,
+    parse_text,
+    save_to_database
+)
+import os
 
 # Blueprints
 equipo_rival_routes = EntidadRoutes('equipo_rival', EquipoRival)
 equipo_rival_bp = equipo_rival_routes.bp
-equipo_rival_bp.name = "equipo_rival"  # El Blueprint que usaremos en `app.py`
+# Establecer el nombre del blueprint (se usa en app.py)
+equipo_rival_bp.name = "equipo_rival"
 
 @equipo_rival_bp.route('/ver', endpoint='equipo_rival_page')
 def equipo_rival_page():
     # Obtener el parámetro de búsqueda
     query = request.args.get('q', '')
     if query:
-        # Filtrar por nombre (busqueda insensible a mayúsculas)
-        equipos_rivales = db.session.query(EquipoRival).filter(
-            EquipoRival.nombre_equipo_rival.ilike(f"%{query}%")
-        ).all()
+        # Filtrar por nombre (búsqueda insensible a mayúsculas)
+        equipos_rivales = (
+            db.session.query(EquipoRival)
+            .filter(EquipoRival.nombre_equipo_rival.ilike(f"%{query}%"))
+            .all()
+        )
     else:
         equipos_rivales = db.session.query(EquipoRival).all()
-    # Pasar el valor de búsqueda a la plantilla
+
+    # Renderizar la plantilla con los resultados
     return render_template('equipo_rival.html', equipos_rivales=equipos_rivales, q=query)
+
+@equipo_rival_bp.route('/cargar-automatico', methods=['POST'])
+def cargar_automatico_equipo_rival():
+    """
+    Endpoint para subir un archivo (PDF o imagen), extraer datos automáticamente
+    y guardarlos en las tablas equipo_rival y jugadores_rivales.
+    """
+    if 'archivo' not in request.files:
+        return jsonify({'error': 'No se encontró el archivo'}), 400
+
+    archivo = request.files['archivo']
+    if archivo.filename == '':
+        return jsonify({'error': 'Nombre de archivo vacío'}), 400
+
+    # Determinar extensión y preparar ruta temporal
+    extension = os.path.splitext(archivo.filename)[1].lower()
+    upload_folder = os.path.join(os.getcwd(), 'static', 'uploads')
+    os.makedirs(upload_folder, exist_ok=True)
+    ruta_temporal = os.path.join(upload_folder, archivo.filename)
+    archivo.save(ruta_temporal)
+
+    try:
+        # Extraer texto según tipo de archivo
+        if extension == '.pdf':
+            texto = extract_text_from_pdf(ruta_temporal)
+        else:
+            texto = extract_text_from_image(ruta_temporal)
+
+        # Parsear y guardar en base de datos
+        equipo_data, jugadores_data = parse_text(texto)
+        save_to_database(equipo_data, jugadores_data)
+
+    except Exception as e:
+        # 'Exception' es la clase base de errores en Python, no necesita import.
+        # Aquí capturamos todos los errores que puedan ocurrir en el bloque try.
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        # Limpiar archivo temporal
+        if os.path.exists(ruta_temporal):
+            os.remove(ruta_temporal)
+
+    return jsonify({'mensaje': 'Equipo y jugadores cargados correctamente'}), 200
