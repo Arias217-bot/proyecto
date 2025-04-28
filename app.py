@@ -9,7 +9,6 @@ from routes.administrador_routes import administrador_bp
 from config import init_db, db
 from routes import blueprints
 from flask import session
-from routes.administrador_routes import administrador_bp
 
 app = Flask(__name__)
 
@@ -48,10 +47,12 @@ for bp in blueprints:
         app.register_blueprint(bp, url_prefix='/partido')
     elif bp.name == "usuario_equipo":
         app.register_blueprint(bp, url_prefix='/usuario_equipo')
+    elif bp.name == "administrador":
+        app.register_blueprint(bp, url_prefix='/administrador')
         
-app.register_blueprint(administrador_bp, url_prefix='/administrador')
 
-app.register_blueprint(administrador_bp, url_prefix='/administrador')
+
+
         
 # Configuración de JWT
 app.config['JWT_SECRET_KEY'] = 'tu_clave_secreta'
