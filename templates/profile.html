@@ -30,7 +30,6 @@
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
                             <input type="email" class="form-control" id="email" name="email" value="{{ usuario.email }}" required disabled>
-
                         </div>
                         <div class="mb-3">
                             <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
@@ -52,22 +51,28 @@
                             <input type="text" class="form-control" id="peso" name="peso" value="{{ usuario.peso }}" disabled>
                         </div>
                         <div class="mb-3">
-                            <label for="altura" class="form-label">altura</label>
+                            <label for="altura" class="form-label">Altura</label>
                             <input type="text" class="form-control" id="altura" name="altura" value="{{ usuario.altura }}" disabled>
                         </div>
                         <div class="mb-3">
                             <label for="direccion" class="form-label">Dirección</label>
                             <input type="text" class="form-control" id="direccion" name="direccion" value="{{ usuario.direccion }}" disabled>
-                                <label for="brado" class="form-label">Brazo Dominante</label>
-                                <select class="form-control" id="brado" name="brado" disabled>
-                                    <option value="Derecho" {% if usuario.brado == 'Derecho' %}selected{% endif %}>Derecho</option>
-                                    <option value="Izquierdo" {% if usuario.brado == 'Izquierdo' %}selected{% endif %}>Izquierdo</option>
-                                    <option value="Ambidiestro" {% if usuario.brado == 'Ambidiestro' %}selected{% endif %}>Ambidiestro</option>
-                                </select>
-                                <label for="perfil" class="form-label">Icono jugador</label>
-                                <input type="file" class="form-control" id="img" name="img" accept=".png, .jpg, .jpeg" disabled>
-                                <label for="experiencia" class="form-label">Experiencia</label>
-                                <textarea class="form-control" id="experiencia" name="experiencia" disabled>{{ usuario.experiencia }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="brado" class="form-label">Brazo Dominante</label>
+                            <select class="form-control" id="brado" name="brado" disabled>
+                                <option value="Derecho" {% if usuario.brado == 'Derecho' %}selected{% endif %}>Derecho</option>
+                                <option value="Izquierdo" {% if usuario.brado == 'Izquierdo' %}selected{% endif %}>Izquierdo</option>
+                                <option value="Ambidiestro" {% if usuario.brado == 'Ambidiestro' %}selected{% endif %}>Ambidiestro</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="perfil" class="form-label">Icono Jugador</label>
+                            <input type="file" class="form-control" id="img" name="img" accept=".png, .jpg, .jpeg" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label for="experiencia" class="form-label">Experiencia</label>
+                            <textarea class="form-control" id="experiencia" name="experiencia" disabled>{{ usuario.experiencia }}</textarea>
                         </div>
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary" id="save-button" style="display: none;">Guardar Cambios</button>
@@ -79,6 +84,7 @@
         </div>
     </div>
 </section>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const editButton = document.getElementById('edit-button');
@@ -97,13 +103,14 @@
         });
     
         cancelButton.addEventListener('click', function(event) {
-            event.preventDefault(); // Evita que el formulario se envíe
+            event.preventDefault(); 
             formInputs.forEach(input => {
                 input.disabled = true;
             });
             editButton.style.display = 'inline-block';
             saveButton.style.display = 'none';
             cancelButton.style.display = 'none';
+<<<<<<< HEAD
             // Restaura los valores originales del formulario (puedes recargar la página si prefieres)
             window.location.reload();
         });
@@ -133,6 +140,50 @@
             }
         });
     
+=======
+            // Restoring original values
+            document.getElementById('email').value = "{{ usuario.email }}";
+            document.getElementById('fecha_nacimiento').value = "{{ usuario.fecha_nacimiento }}";
+            document.getElementById('sexo').value = "{{ usuario.sexo }}";
+            document.getElementById('telefono').value = "{{ usuario.telefono }}";
+            document.getElementById('direccion').value = "{{ usuario.direccion }}";
+            document.getElementById('experiencia').value = "{{ usuario.experiencia }}";
+        });
+
+        document.getElementById('edit-profile-form').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+
+            const formData = new FormData(event.target);
+            const formValues = Object.fromEntries(formData.entries());
+
+            fetch('/perfil/ver/{{ usuario.documento }}', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formValues),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Perfil actualizado correctamente');
+                    formInputs.forEach(input => {
+                        input.disabled = true;
+                    });
+                    editButton.style.display = 'inline-block';
+                    saveButton.style.display = 'none';
+                    cancelButton.style.display = 'none';
+                } else {
+                    alert('Hubo un problema al actualizar el perfil');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Hubo un error en la conexión con el servidor');
+            });
+        });
+
+>>>>>>> main
         document.getElementById("delete-button").addEventListener("click", function() {
             if (confirm("¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.")) {
                 fetch("/usuarios/{{ usuario.documento }}", {
@@ -147,7 +198,11 @@
             }
         });
     });
+<<<<<<< HEAD
     </script>
     
 
+=======
+</script>
+>>>>>>> main
 {% endblock %}
