@@ -5,7 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import timedelta
 
 from models.usuario import Usuario
-
+from routes.administrador_routes import administrador_bp
 from config import init_db, db
 from routes import blueprints
 from flask import session
@@ -46,7 +46,11 @@ for bp in blueprints:
         app.register_blueprint(bp, url_prefix='/mensajes')
     elif bp.name == "partido":
         app.register_blueprint(bp, url_prefix='/partido')
+    elif bp.name == "usuario_equipo":
+        app.register_blueprint(bp, url_prefix='/usuario_equipo')
         
+app.register_blueprint(administrador_bp, url_prefix='/administrador')
+
 app.register_blueprint(administrador_bp, url_prefix='/administrador')
         
 # Configuración de JWT

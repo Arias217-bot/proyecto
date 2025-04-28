@@ -119,16 +119,9 @@
                 {% else %}
                     <a href="#">Equipos</a>
                 {% endif %}
-            </li>
-            <!-- Opción Administrador -->
-            <li>
-                {% if documento %}
-                    <a href="{{ url_for('administrador.administrador_page', documento=documento) }}">Administrador</a>
-                {% else %}
-                    <a href="#">Administrador</a>
-                {% endif %}
-            </li>
-            <li><a href="#" class="text-danger logout-btn" id="logoutBtn">Cerrar Sesión</a></li>
+            </li>            
+
+            <li><a href="#" class="text-danger logout-btn">Cerrar Sesión</a></li>
         </ul>
     </div>
 
@@ -146,14 +139,6 @@
         // Script para toggle en móviles
         $('#toggleSidebar').click(function() {
             $('#sidebar').toggleClass('active');
-        });
-
-        // Redirigir al login al hacer clic en "Cerrar Sesión"
-        $('#logoutBtn').click(function(e) {
-            e.preventDefault();  // Prevenir el comportamiento por defecto del enlace
-
-            // Redirigir al login
-            window.location.href = "/login";  // Cambia la URL si es necesario
         });
     </script>
 
