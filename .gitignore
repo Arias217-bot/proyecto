@@ -15,7 +15,7 @@
 !Salidas/
 !models/
 !utils/
-!estadistica/
+!estadistica/  # Asegúrate de que esta línea esté presente
 
 # Ignorar el contenido dentro de algunas carpetas (excepto las que no queremos ignorar)
 detecciones/*

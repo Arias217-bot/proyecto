@@ -8,6 +8,8 @@ import logging
 from datetime import datetime
 from tkinter import Tk, filedialog, Label, Button, StringVar, OptionMenu
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+import json
 
 # Importar funciones de detección específicas desde el módulo detecciones
 from detecciones import (
@@ -18,10 +20,8 @@ from detecciones import (
     detectar_bloqueo, obtener_encabezados_bloqueo
 )
 
-# Importar función para detección multipersona
-from models.classify_pose import ClassifyPose
+# Importar función para detección
 from multi_person_detector import MultiPersonDetector
-from utils.config import CSV_HEADERS  # Importar los encabezados centralizados
 
 # Configuración de logs para almacenar errores en una carpeta llamada logs
 os.makedirs("logs", exist_ok=True)
@@ -131,9 +131,8 @@ def procesar_frame(frame, pose, deteccion_func):
         if results.pose_landmarks:
             mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
             landmarks = list(results.pose_landmarks.landmark)
-            print(f"Landmarks detectados en el frame: {landmarks}")
             evaluacion_resultados = deteccion_func(landmarks)  # Esta función debe devolver una lista de datos
-            print(f"Datos generados por deteccion_func: {evaluacion_resultados}")
+            
 
         return frame, evaluacion_resultados
     except Exception as e:
@@ -220,34 +219,65 @@ def guardar_resultados_csv(datos, path_video, deteccion, obtener_encabezados_fun
     try:
         # Obtener encabezados dinámicos y agregar "Frame" al inicio
         encabezados = ["Frame"] + obtener_encabezados_func()
+        if not encabezados or len(encabezados) < 2:
+            raise RuntimeError("No se pudieron generar los encabezados para el archivo CSV.")
 
         # Crear el DataFrame con los datos y encabezados
         df = pd.DataFrame(datos, columns=encabezados)
         df.to_csv(filename, index=False)
         print(f"Resultados guardados en: {filename}")
+        return filename
     except Exception as e:
         logging.error(f"Error al guardar archivo CSV: {e}")
         print(f"Ocurrió un error al guardar los resultados: {e}")
+        return None
+
+def guardar_resultados_json(datos, path_video, deteccion, obtener_encabezados_func):
+    """Guarda los datos de evaluación en un archivo JSON dentro de la carpeta Salidas/"""
+    carpeta_salida = "Salidas"
+    os.makedirs(carpeta_salida, exist_ok=True)
+
+    # Extraer el nombre base del video y formatear la fecha
+    nombre_video = os.path.splitext(os.path.basename(path_video))[0]
+    fecha = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = os.path.join(carpeta_salida, f"{nombre_video}_{deteccion}_{fecha}.json")
+
+    try:
+        # Obtener encabezados dinámicos
+        encabezados = ["Frame"] + obtener_encabezados_func()
+        if not encabezados or len(encabezados) < 2:
+            raise RuntimeError("No se pudieron generar los encabezados para el archivo JSON.")
+
+        # Crear una lista de diccionarios para almacenar los datos
+        datos_json = [dict(zip(encabezados, fila)) for fila in datos]
+
+        # Guardar los datos en formato JSON
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(datos_json, f, indent=4)
+        print(f"Resultados guardados en: {filename}")
+        return filename
+    except Exception as e:
+        logging.error(f"Error al guardar archivo JSON: {e}")
+        print(f"Ocurrió un error al guardar los resultados: {e}")
+        return None
 
 # Función principal para iniciar el procesamiento
 def iniciar_procesamiento():
     """Inicia el flujo principal del programa."""
     print("Iniciando procesamiento...")
     modalidad = seleccionar_modalidad()
-    print(f"Modalidad seleccionada: {modalidad}")
     if not modalidad:
         print("No se seleccionó modalidad. Saliendo...")
-        return
+        return None, None
 
     if modalidad == "persona":
         deteccion = seleccionar_deteccion()
-        print(f"Detección seleccionada: {deteccion}")
         if not deteccion:
             print("No se seleccionó ninguna detección. Saliendo...")
-            return
+            return None, None
 
-        # Mapear detecciones a funciones de encabezados
-        deteccion_func_map = {
+        # Mapeo de la detección seleccionada a las funciones correspondientes
+        funciones_deteccion = {
             "Saque": (detectar_saque, obtener_encabezados_saque),
             "Colocador": (detectar_colocador, obtener_encabezados_colocador),
             "Ataque": (detectar_ataque, obtener_encabezados_ataque),
@@ -255,49 +285,70 @@ def iniciar_procesamiento():
             "Bloqueo": (detectar_bloqueo, obtener_encabezados_bloqueo),
         }
 
-        deteccion_func, obtener_encabezados_func = deteccion_func_map.get(deteccion, (None, None))
-        if not deteccion_func or not obtener_encabezados_func:
-            print("Detección no válida seleccionada. Saliendo...")
-            return
+        funciones = funciones_deteccion.get(deteccion)
+        if not funciones:
+            print(f"Detección '{deteccion}' no implementada.")
+            return None, None
 
+        detectar_func, obtener_encabezados_func = funciones
+
+        # Procesar video o cámara
         fuente = obtener_fuente_video()
-        print(f"Fuente seleccionada: {fuente}")
         if fuente is None:
             print("No se seleccionó ninguna fuente de video. Saliendo...")
-            return
+            return None, None
 
-        # Siempre guardar el video procesado
-        print("El video será guardado.")
-        if isinstance(fuente, str):  # Si la fuente es un archivo de video
+        if isinstance(fuente, str):  # Si es un archivo de video
             nombre_video = os.path.splitext(os.path.basename(fuente))[0]
             output_path = os.path.join("Salidas", f"{deteccion}_{nombre_video}_procesado_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4")
+            datos_resultados = procesar_video(fuente, detectar_func, deteccion, output_path)
 
-            datos_resultados = procesar_video(fuente, deteccion_func, deteccion, output_path)
-            guardar_resultados_csv(datos_resultados, fuente, deteccion, obtener_encabezados_func)
-        else:  # Si la fuente es la cámara
-            output_path = os.path.join("Salidas", f"{deteccion}_camara_procesado_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4")
-            procesar_video_camara(deteccion_func, deteccion)
+            if not datos_resultados:
+                raise RuntimeError("No se generaron datos para guardar en el archivo JSON.")
+
+            json_path = guardar_resultados_json(datos_resultados, fuente, deteccion, obtener_encabezados_func)
+            if not json_path:
+                raise RuntimeError("No se pudo generar el archivo JSON.")
+            return json_path, deteccion
+        else:  # Si es la cámara
+            procesar_video_camara(detectar_func, deteccion)
+            return None, deteccion
 
     elif modalidad == "equipo":
         fuente = obtener_fuente_video()
-        print(f"Fuente seleccionada: {fuente}")
         if fuente is None:
             print("No se seleccionó ninguna fuente de video. Saliendo...")
-            return
+            return None, None
 
         detector = MultiPersonDetector(model_url="https://tfhub.dev/google/movenet/multipose/lightning/1", output_dir="Salidas")
         if isinstance(fuente, str):
-            detector.process_video_or_camera(fuente, os.path.join("Salidas", "equipo_output_video.avi"), os.path.join("Salidas", "equipo_output.csv"))
+            detector.process_video_or_camera(fuente, os.path.join("Salidas", "equipo_output_video.avi"), os.path.join("Salidas", "equipo_output.json"))
+            return os.path.join("Salidas", "equipo_output.json"), "equipo"
         else:
-            detector.process_video_or_camera(0, os.path.join("Salidas", "equipo_output_video.avi"), os.path.join("Salidas", "equipo_output.csv"))
+            detector.process_video_or_camera(0, os.path.join("Salidas", "equipo_output_video.avi"), os.path.join("Salidas", "equipo_output.json"))
+            return os.path.join("Salidas", "equipo_output.json"), "equipo"
 
-# Bloque principal
+# Importar módulos necesarios
+from Estadistica.estadistica import AnalisisEstadistico  # Análisis estadístico
+
 def main():
     """Función principal para iniciar el programa."""
     print("Bienvenido a DballTrainer - Análisis Técnico de Voleibol")
-    print("Iniciando el programa...")
+
     try:
-        iniciar_procesamiento()
+        # Iniciar procesamiento del video (retorna JSON generado y tipo de análisis)
+        json_path, tipo_analisis = iniciar_procesamiento()
+
+        if not json_path:
+            print("No se generó el archivo JSON. Saliendo...")
+            return
+
+        # Crear instancia de la clase AnalisisEstadistico y realizar el análisis
+        analisis = AnalisisEstadistico(json_path, tipo_analisis)
+        analisis.realizar_analisis()  # Llamar al método para ejecutar el análisis
+
+        print("\nProceso completado exitosamente.")
+
     except Exception as e:
         logging.error(f"Error inesperado: {e}")
         print("Ocurrió un error inesperado. Por favor, revise el archivo de logs para más detalles.")
