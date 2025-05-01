@@ -24,13 +24,17 @@ def perfil_equipos(documento):
     if not usuario:
         return "Usuario no encontrado", 404
 
-    equipos = (db.session.query(Equipo)
-                .join(Usuario_Equipo, Usuario_Equipo.id_equipo == Equipo.id_equipo)
-                .filter(Usuario_Equipo.documento == documento)
-                .all())
+    equipos = (
+        db.session.query(Equipo)
+          .join(Usuario_Equipo, Usuario_Equipo.id_equipo == Equipo.id_equipo)
+          .filter(Usuario_Equipo.documento == documento)
+          .all()
+    )
 
     categorias_edad = CategoriaEdad.query.all()
     categorias_sexo = CategoriaSexo.query.all()
+    roles = Rol.query.all()               # <— Traigo todos los roles
+    posiciones = Posicion.query.all()     # <— Traigo todas las posiciones
 
     return render_template(
         'equipos.html',
@@ -38,6 +42,8 @@ def perfil_equipos(documento):
         equipos=[e.to_dict() for e in equipos],
         categorias_edad=categorias_edad,
         categorias_sexo=categorias_sexo,
+        roles=roles,                       # <— Paso roles al template
+        posiciones=posiciones,             # <— Paso posiciones al template
         documento=documento
     )
 
