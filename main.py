@@ -183,53 +183,49 @@ def procesar_video(video_path, deteccion_func, deteccion, output_path):
     print(f"Video procesado guardado en: {output_path}")
     return datos_resultados
 
-def procesar_video_camara(deteccion_func, deteccion):
-    """Procesa la cámara en tiempo real."""
+def procesar_video_camara(deteccion_func, obtener_encabezados_func, deteccion):
+    """Procesa la cámara en tiempo real y guarda los resultados en un archivo JSON."""
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("No se pudo abrir la cámara.")
-        return
+        return None
 
     pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+    datos_resultados = []  # Lista para almacenar los resultados de evaluación
+    frame_number = 0
 
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
 
-        frame, _ = procesar_frame(frame, pose, deteccion_func)
+        frame = cv2.flip(frame, 1)  # Voltear la imagen horizontalmente para una vista espejo
+        frame, evaluacion_resultados = procesar_frame(frame, pose, deteccion_func)
+
+        # Agregar los datos al resultado final
+        datos_resultados.append([frame_number, *evaluacion_resultados["datos"]])
+        frame_number += 1
 
         cv2.imshow(f"Procesando {deteccion}", frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q'):  # Presiona 'q' para salir
             break
 
     cap.release()
     cv2.destroyAllWindows()
 
-def guardar_resultados_csv(datos, path_video, deteccion, obtener_encabezados_func):
-    """Guarda los datos de evaluación en un archivo CSV dentro de la carpeta Salidas/"""
-    carpeta_salida = "Salidas"
-    os.makedirs(carpeta_salida, exist_ok=True)
-
-    # Extraer el nombre base del video y formatear la fecha
-    nombre_video = os.path.splitext(os.path.basename(path_video))[0]
-    fecha = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = os.path.join(carpeta_salida, f"{nombre_video}_{deteccion}_{fecha}.csv")
-
-    try:
-        # Obtener encabezados dinámicos y agregar "Frame" al inicio
-        encabezados = ["Frame"] + obtener_encabezados_func()
-        if not encabezados or len(encabezados) < 2:
-            raise RuntimeError("No se pudieron generar los encabezados para el archivo CSV.")
-
-        # Crear el DataFrame con los datos y encabezados
-        df = pd.DataFrame(datos, columns=encabezados)
-        df.to_csv(filename, index=False)
-        print(f"Resultados guardados en: {filename}")
-        return filename
-    except Exception as e:
-        logging.error(f"Error al guardar archivo CSV: {e}")
-        print(f"Ocurrió un error al guardar los resultados: {e}")
+    # Guardar los resultados en un archivo JSON
+    if datos_resultados:
+        path_video = "camara"  # Identificador para la cámara
+        json_path = guardar_resultados_json(datos_resultados, path_video, deteccion, obtener_encabezados_func)
+      
+        if json_path and os.path.exists(json_path):
+            print(f"Resultados guardados correctamente en: {json_path}")
+            return json_path
+        else:
+            print("No se pudo guardar el archivo JSON o no existe el archivo.")
+            return None
+    else:
+        print("No se generaron datos para guardar en el archivo JSON.")
         return None
 
 def guardar_resultados_json(datos, path_video, deteccion, obtener_encabezados_func):
@@ -237,28 +233,23 @@ def guardar_resultados_json(datos, path_video, deteccion, obtener_encabezados_fu
     carpeta_salida = "Salidas"
     os.makedirs(carpeta_salida, exist_ok=True)
 
-    # Extraer el nombre base del video y formatear la fecha
     nombre_video = os.path.splitext(os.path.basename(path_video))[0]
     fecha = datetime.now().strftime('%Y%m%d_%H%M%S')
     filename = os.path.join(carpeta_salida, f"{nombre_video}_{deteccion}_{fecha}.json")
 
     try:
-        # Obtener encabezados dinámicos
         encabezados = ["Frame"] + obtener_encabezados_func()
-        if not encabezados or len(encabezados) < 2:
-            raise RuntimeError("No se pudieron generar los encabezados para el archivo JSON.")
-
-        # Crear una lista de diccionarios para almacenar los datos
         datos_json = [dict(zip(encabezados, fila)) for fila in datos]
 
-        # Guardar los datos en formato JSON
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(datos_json, f, indent=4)
-        print(f"Resultados guardados en: {filename}")
+
+        print(f"Resultados guardados exitosamente en: {filename}")
         return filename
+
     except Exception as e:
-        logging.error(f"Error al guardar archivo JSON: {e}")
-        print(f"Ocurrió un error al guardar los resultados: {e}")
+        logging.error(f"Error al guardar JSON en {filename}: {e}")  # Loguearlo bien
+        print(f"Error al guardar archivo JSON. Detalle: {e}")
         return None
 
 # Función principal para iniciar el procesamiento
@@ -311,8 +302,8 @@ def iniciar_procesamiento():
                 raise RuntimeError("No se pudo generar el archivo JSON.")
             return json_path, deteccion
         else:  # Si es la cámara
-            procesar_video_camara(detectar_func, deteccion)
-            return None, deteccion
+            json_path = procesar_video_camara(detectar_func, obtener_encabezados_func, deteccion)
+            return json_path, deteccion
 
     elif modalidad == "equipo":
         fuente = obtener_fuente_video()

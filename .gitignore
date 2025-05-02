@@ -43,3 +43,5 @@ Thumbs.db
 # Ignorar salidas generadas
 Salidas/*.csv
 Salidas/*.avi
+Salidas/*.mp4
+Salidas/*.json

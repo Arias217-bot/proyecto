@@ -70,6 +70,9 @@ class AnalisisEstadistico:
 
     def guardar_recomendaciones(self, recomendaciones, resumen_path):
         """Guarda las recomendaciones en un archivo de texto."""
+        if not isinstance(recomendaciones, list):
+            raise ValueError("Las recomendaciones deben ser una lista.")
+
         if resumen_path.exists():
             print(f"Advertencia: El archivo {resumen_path} ya existe y será sobrescrito.")
         with open(resumen_path, "w", encoding="utf-8") as f:
@@ -254,15 +257,31 @@ class AnalisisEstadistico:
         # Altura del brazo promedio
         altura_promedio_jugador = 180  # cm (ejemplo)
         altura_brazo_promedio = self.data["Altura.Brazo"].mean()
-        altura_relativa = altura_brazo_promedio - altura_promedio_jugador / 2 # Ejemplo: relativa a la mitad de la altura
-        umbral_altura_brazo = 50 # cm (ejemplo)
+        altura_relativa = altura_brazo_promedio - altura_promedio_jugador / 2  # Ejemplo: relativa a la mitad de la altura
+        umbral_altura_brazo = 50  # cm (ejemplo)
         evaluacion_altura_brazo = "adecuada" if altura_relativa >= umbral_altura_brazo else "a revisar"
         recomendaciones.append(f"- Altura promedio del brazo: {altura_brazo_promedio:.2f} cm (Relativa: >= {umbral_altura_brazo:.0f} cm - {evaluacion_altura_brazo}).")
 
         # Alineaciones promedio
-        umbral_alineacion = 10 # Grados de desviación (ejemplo)
-        alineacion_hombro_promedio = abs(self.data["Alineacion.Hombro"].mean()) # Asumiendo 0 es ideal
-        alineacion_codo_promedio = abs(self.data["Alineacion.Codo"].mean()) # Asumiendo
+        umbral_alineacion = 10  # Grados de desviación (ejemplo)
+        alineacion_hombro_promedio = abs(self.data["Alineacion.Hombro"].mean())  # Asumiendo 0 es ideal
+        alineacion_codo_promedio = abs(self.data["Alineacion.Codo"].mean())  # Asumiendo 0 es ideal
+        recomendaciones.append(f"- Alineación promedio del hombro: {alineacion_hombro_promedio:.2f}°.")
+        recomendaciones.append(f"- Alineación promedio del codo: {alineacion_codo_promedio:.2f}°.")
+
+        # Porcentaje de contactos con balón correctos
+        porcentaje_contacto_balon = (self.data["Contacto.Balon"].sum() / len(self.data)) * 100
+        recomendaciones.append(f"- Porcentaje de contactos correctos con el balón: {porcentaje_contacto_balon:.2f}%.")
+
+        # Porcentaje de saques válidos
+        porcentaje_saques_validos = (self.data["Saque.Valido"].sum() / len(self.data)) * 100
+        recomendaciones.append(f"- Porcentaje de saques válidos: {porcentaje_saques_validos:.2f}%.")
+
+        # Mensaje por defecto si no hay recomendaciones específicas
+        if not recomendaciones:
+            recomendaciones.append("No se encontraron problemas en el análisis de saque.")
+
+        return recomendaciones
 
     def generar_recomendaciones_colocador(self):
         """Genera recomendaciones específicas para el análisis de colocador."""
