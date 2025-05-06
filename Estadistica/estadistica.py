@@ -366,8 +366,12 @@ class AnalisisEstadistico:
             print("No hay datos para generar la matriz de correlación.")
             return
 
+        # Filtrar solo columnas numéricas
+        df_numerico = self.data.select_dtypes(include=['number'])
+        cor_matrix = df_numerico.corr()
+
+        # Graficar y guardar la matriz
         plt.figure(figsize=(10, 8))
-        cor_matrix = self.data.corr()  # Calcula la matriz de correlación
         sns.heatmap(cor_matrix, annot=True, cmap="coolwarm", fmt=".2f")
         plt.title("Matriz de Correlación")
         plt.tight_layout()

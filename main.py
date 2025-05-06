@@ -10,6 +10,8 @@ from tkinter import Tk, filedialog, Label, Button, StringVar, OptionMenu
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import json
+from evaluaciones.evaluar_contacto import evaluar_contacto
+
 
 # Importar funciones de detección específicas desde el módulo detecciones
 from detecciones import (
@@ -117,27 +119,59 @@ def obtener_fuente_video():
         return None
 
 # Función para procesar un frame
+
 def procesar_frame(frame, pose, deteccion_func):
+
     """Procesa un frame y evalúa la detección."""
+
     try:
+
         # Convertir imagen a RGB
+
         image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
         results = pose.process(image_rgb)
 
+
+
         # Diccionario por defecto si no hay landmarks
+
         evaluacion_resultados = {"mensajes": ["No se detectaron puntos de referencia"], "datos": []}
 
+
+
         # Si se detectan landmarks se dibujan y se evalúan
+
         if results.pose_landmarks:
+
             mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+
             landmarks = list(results.pose_landmarks.landmark)
-            evaluacion_resultados = deteccion_func(landmarks)  # Esta función debe devolver una lista de datos
-            
+
+
+
+            # Llamar a la función de evaluación del tipo de acción
+
+            evaluacion_resultados = deteccion_func(landmarks)
+
+
+
+            # VERIFICAR CONTACTO y agregarlo al resultado
+
+            hay_contacto = evaluar_contacto(landmarks)
+
+            evaluacion_resultados["datos"].append(hay_contacto)
+
+            evaluacion_resultados["mensajes"].append(f"Contacto con balón: {'Sí' if hay_contacto else 'No'}")
+
+
 
         return frame, evaluacion_resultados
-    except Exception as e:
-        raise RuntimeError(f"Error procesando frame: {e}")
 
+    except Exception as e:
+
+        raise RuntimeError(f"Error procesando frame: {e}")
+    
 def procesar_video(video_path, deteccion_func, deteccion, output_path):
     """Procesa un video y guarda el resultado en un archivo de video."""
     cap = cv2.VideoCapture(video_path)
@@ -238,7 +272,7 @@ def guardar_resultados_json(datos, path_video, deteccion, obtener_encabezados_fu
     filename = os.path.join(carpeta_salida, f"{nombre_video}_{deteccion}_{fecha}.json")
 
     try:
-        encabezados = ["Frame"] + obtener_encabezados_func()
+        encabezados = ["Frame"] + obtener_encabezados_func() + ["Contacto"]
         datos_json = [dict(zip(encabezados, fila)) for fila in datos]
 
         with open(filename, "w", encoding="utf-8") as f:
