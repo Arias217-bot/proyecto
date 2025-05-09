@@ -11,3 +11,6 @@ class EquipoRival(EntidadBase):
     asistente = db.Column(db.String(50), nullable=False)
     director_cedula = db.Column(db.String(20), nullable=False)
     asistente_cedula = db.Column(db.String(20), nullable=False)
+    id_torneo = db.Column(db.Integer, db.ForeignKey('torneo.id_torneo'), nullable=True)
+
+    torneo = db.relationship('Torneo', backref='equipos_rivales')

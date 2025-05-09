@@ -1,3 +1,4 @@
+# services/extractor_service.py
 import pytesseract
 # Ruta al binario de Tesseract para Windows
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
@@ -45,6 +46,7 @@ def parse_text(text):
     """
     # 1. Extraer datos del equipo
     equipo = {
+        'id_torneo': safe_search(r'Torneo:\s*(.*)', text, 'Torneo'),
         'nombre_equipo_rival': safe_search(r'Equipo:\s*(.*)', text, 'Equipo'),
         'categoria': safe_search(r'Categor[ií]a:\s*(.*)', text, 'Categoría'),
         'director': safe_search(r'Director T[eé]cnico:\s*(.*)', text, 'Director Técnico'),

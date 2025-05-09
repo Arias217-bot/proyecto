@@ -120,6 +120,13 @@
                 {% else %}
                     <a href="#">Equipos</a>
                 {% endif %}
+            </li>
+            <li>
+                {% if documento %}
+                    <a href="{{ url_for('videos.videos_usuario', documento=documento) }}">Videos</a>
+                {% else %}
+                    <a href="#">Videos</a>
+                {% endif %}
             </li>            
             <!-- Opción Administrador -->
             <li>

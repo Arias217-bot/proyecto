@@ -2,6 +2,7 @@
 from routes.entidad_routes import EntidadRoutes
 from models.torneo import Torneo
 from models.partido import Partido
+from models.equipo_rival import EquipoRival
 
 from flask import render_template, request
 from config import db
@@ -67,5 +68,24 @@ def detalle_torneo(id_torneo, nombre_equipo, nombre_torneo):
         for partido in partidos
     ]
 
+    # Obtener equipos rivales del torneo
+    equipos_rivales = (
+        db.session.query(EquipoRival)
+        .filter(EquipoRival.id_torneo == torneo.id_torneo)
+        .all()
+    )
+
+    equipos_rivales_lista = [
+        {
+            "nombre_equipo_rival": eq.nombre_equipo_rival,
+            "categoria": eq.categoria,
+            "director": eq.director,
+            "asistente": eq.asistente,
+            "director_cedula": eq.director_cedula,
+            "asistente_cedula": eq.asistente_cedula
+        }
+        for eq in equipos_rivales
+    ]
+
     # Aquí pasamos el documento del partido al contexto
-    return render_template('detalle_torneo.html', torneo=torneo, equipo=equipo, id_torneo=id_torneo, partidos=partidos_lista, nombre_equipo=nombre_equipo_formateado, nombre_torneo=nombre_torneo_formateado)
+    return render_template('detalle_torneo.html', torneo=torneo, equipo=equipo, id_torneo=id_torneo, partidos=partidos_lista, equipos_rivales=equipos_rivales_lista, nombre_equipo=nombre_equipo_formateado, nombre_torneo=nombre_torneo_formateado)

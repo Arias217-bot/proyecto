@@ -45,6 +45,14 @@
       <div class="card card-body">
         <form id="crearEquipoRivalForm">
           <div class="mb-3">
+            <select id="idTorneo" name="id_torneo" class="form-select" required>
+              <option value="">Selecciona un torneo</option>
+              {% for torneo in torneos %}
+                <option value="{{ torneo.id_torneo }}">{{ torneo.nombre_torneo }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
             <input type="text" id="nombreEquipoRival" name="nombre_equipo_rival" class="form-control" placeholder="Nombre del equipo rival" required>
           </div>
           <div class="mb-3">
@@ -139,6 +147,7 @@
 
     // CRUD Manual: crear nuevo equipo
     document.getElementById("crearEquipoRival").addEventListener("click", function () {
+      const idTorneo = document.getElementById("idTorneo").value;
       const nombreEquipoRival = document.getElementById("nombreEquipoRival").value;
       const categoria = document.getElementById("categoria").value;
       const director = document.getElementById("director").value;
@@ -146,7 +155,7 @@
       const directorCedula = document.getElementById("directorCedula").value;
       const asistenteCedula = document.getElementById("asistenteCedula").value;
 
-      if (!nombreEquipoRival.trim() || !categoria.trim() || !director.trim() || !asistente.trim() || !directorCedula.trim() || !asistenteCedula.trim()) {
+      if (!idTorneo.trim() || !nombreEquipoRival.trim() || !categoria.trim() || !director.trim() || !asistente.trim() || !directorCedula.trim() || !asistenteCedula.trim()) {
         alert("Todos los campos son obligatorios.");
         return;
       }
@@ -154,7 +163,7 @@
       fetch("/equipo_rival", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre_equipo_rival: nombreEquipoRival, categoria: categoria, director: director, asistente: asistente, director_cedula: directorCedula, asistente_cedula: asistenteCedula })
+        body: JSON.stringify({ id_torneo:idTorneo, nombre_equipo_rival: nombreEquipoRival, categoria: categoria, director: director, asistente: asistente, director_cedula: directorCedula, asistente_cedula: asistenteCedula })
       })
       .then(response => response.json())
       .then(data => {

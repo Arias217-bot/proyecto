@@ -1,8 +1,11 @@
 # routes/equipo_rival_routes.py
 from routes.entidad_routes import EntidadRoutes
 from models.equipo_rival import EquipoRival
+from models.jugadores_rivales import JugadoresRivales
+from models.torneo import Torneo
 from flask import render_template, request, jsonify
 from config import db
+
 # Importar servicios para procesamiento automático
 from services.extractor_service import (
     extract_text_from_image,
@@ -20,21 +23,15 @@ equipo_rival_bp.name = "equipo_rival"
 
 @equipo_rival_bp.route('/ver', endpoint='equipo_rival_page')
 def equipo_rival_page():
-    # Obtener el parámetro de búsqueda
     query = request.args.get('q', '')
     if query:
-        # Filtrar por nombre (búsqueda insensible a mayúsculas)
-        equipos_rivales = (
-            db.session.query(EquipoRival)
-            .filter(EquipoRival.nombre_equipo_rival.ilike(f"%{query}%"))
-            .all()
-        )
+        equipos_rivales = db.session.query(EquipoRival).filter(EquipoRival.nombre_equipo_rival.ilike(f"%{query}%")).all()
     else:
         equipos_rivales = db.session.query(EquipoRival).all()
 
-    # Renderizar la plantilla con los resultados
-    return render_template('equipo_rival.html', equipos_rivales=equipos_rivales, q=query)
-
+    torneos = db.session.query(Torneo).all()
+    return render_template('equipo_rival.html', equipos_rivales=equipos_rivales, torneos=torneos, q=query)
+    
 @equipo_rival_bp.route('/cargar-automatico', methods=['POST'])
 def cargar_automatico_equipo_rival():
     """
@@ -78,6 +75,43 @@ def cargar_automatico_equipo_rival():
 
     return jsonify({'mensaje': 'Equipo y jugadores cargados correctamente'}), 200
 
+@equipo_rival_bp.route('/<nombre_torneo>/<nombre_equipo_rival>', endpoint='detalle_equipo_rival')
+def detalle_equipo_rival(nombre_torneo, nombre_equipo_rival):
+    nombre_torneo_formateado = nombre_torneo.replace("-", " ").lower()
+    nombre_equipo_rival_formateado = nombre_equipo_rival.replace("-", " ").lower()
+
+    # Buscar el torneo
+    torneo = db.session.query(Torneo).filter(
+        db.func.lower(Torneo.nombre_torneo) == nombre_torneo_formateado
+    ).first()
+
+    if not torneo:
+        return "Torneo no encontrado", 404
+
+    # Buscar el equipo rival
+    equipo_rival = db.session.query(EquipoRival).filter(
+        db.func.lower(EquipoRival.nombre_equipo_rival) == nombre_equipo_rival_formateado,
+        EquipoRival.id_torneo == torneo.id_torneo
+    ).first()
+
+    if not equipo_rival:
+        return "Equipo rival no encontrado", 404
+
+    # Obtener los jugadores rivales del equipo
+    jugadores_rivales = (
+        db.session.query(JugadoresRivales)
+        .filter(JugadoresRivales.nombre_equipo_rival == equipo_rival.nombre_equipo_rival)
+        .all()
+    )
+
+    return render_template(
+        'detalle_equipo_rival.html',
+        equipo_rival=equipo_rival,
+        torneo=torneo,
+        nombre_torneo=nombre_torneo_formateado,
+        nombre_equipo_rival=nombre_equipo_rival_formateado,
+        jugadores_rivales=jugadores_rivales
+    )
 
 '''
 

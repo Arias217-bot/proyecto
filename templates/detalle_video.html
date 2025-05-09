@@ -1,0 +1,18 @@
+{% extends './base.html' %}
+
+{% block body %}
+<div class="container mt-4">
+    <h2>Detalle del Video</h2>
+    <div class="card p-4">
+        <p><strong>Nombre:</strong> {{ video.nombre }}</p>
+        <p><strong>Usuario (Documento):</strong> {{ video.documento_usuario }}</p>
+        <p><strong>Modalidad:</strong> {{ video.modalidad.nombre }}</p>
+        <p><strong>Tipo de Detección:</strong> {{ video.deteccion.nombre }}</p>
+        <p><strong>Video:</strong></p>
+        <video width="640" controls>
+            <source src="{{ video.url }}" type="video/mp4">
+            Tu navegador no soporta la reproducción de video.
+        </video>
+    </div>
+</div>
+{% endblock %}
