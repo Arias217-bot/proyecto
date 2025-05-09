@@ -30,6 +30,13 @@ CREATE TABLE IF NOT EXISTS public.detalle_jugada
     CONSTRAINT detalle_jugada_pkey PRIMARY KEY (id_detalle)
 );
 
+CREATE TABLE IF NOT EXISTS public.deteccion
+(
+    id_deteccion serial NOT NULL,
+    nombre character varying(100) COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT deteccion_pkey PRIMARY KEY (id_deteccion)
+);
+
 CREATE TABLE IF NOT EXISTS public.equipo
 (
     id_equipo integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
@@ -48,6 +55,7 @@ CREATE TABLE IF NOT EXISTS public.equipo_rival
     asistente character varying(50) COLLATE pg_catalog."default" NOT NULL,
     director_cedula character varying(20) COLLATE pg_catalog."default" NOT NULL,
     asistente_cedula character varying(20) COLLATE pg_catalog."default" NOT NULL,
+    id_torneo integer,
     CONSTRAINT equipo_rival_pkey PRIMARY KEY (nombre_equipo_rival)
 );
 
@@ -80,6 +88,13 @@ CREATE TABLE IF NOT EXISTS public.mensajes
     fecha_envio timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     autor character varying(100) COLLATE pg_catalog."default",
     CONSTRAINT pk_mensajes PRIMARY KEY (id_mensaje)
+);
+
+CREATE TABLE IF NOT EXISTS public.modalidad
+(
+    id_modalidad serial NOT NULL,
+    nombre character varying(100) COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT modalidad_pkey PRIMARY KEY (id_modalidad)
 );
 
 CREATE TABLE IF NOT EXISTS public.partido
@@ -159,6 +174,17 @@ CREATE TABLE IF NOT EXISTS public.usuario_equipo
     CONSTRAINT usuario_equipo_pkey PRIMARY KEY (id_usuario_equipo)
 );
 
+CREATE TABLE IF NOT EXISTS public.videos
+(
+    id_video serial NOT NULL,
+    nombre character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    url character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    documento_usuario character varying(20) COLLATE pg_catalog."default" NOT NULL,
+    id_modalidad integer,
+    id_deteccion integer,
+    CONSTRAINT videos_pkey PRIMARY KEY (id_video)
+);
+
 ALTER TABLE IF EXISTS public.detalle_jugada
     ADD CONSTRAINT fk_detalle_jugada_jugada FOREIGN KEY (id_jugada)
     REFERENCES public.jugadas (id_jugada) MATCH SIMPLE
@@ -177,6 +203,13 @@ ALTER TABLE IF EXISTS public.equipo
     ADD CONSTRAINT fk_equipo_categoria_sexo FOREIGN KEY (id_categoria_sexo)
     REFERENCES public.categoria_sexo (id_categoria_sexo) MATCH SIMPLE
     ON UPDATE CASCADE
+    ON DELETE CASCADE;
+
+
+ALTER TABLE IF EXISTS public.equipo_rival
+    ADD CONSTRAINT fk_equipo_rival_torneo FOREIGN KEY (id_torneo)
+    REFERENCES public.torneo (id_torneo) MATCH SIMPLE
+    ON UPDATE NO ACTION
     ON DELETE CASCADE;
 
 
@@ -255,5 +288,26 @@ ALTER TABLE IF EXISTS public.usuario_equipo
     REFERENCES public.usuario (documento) MATCH SIMPLE
     ON UPDATE CASCADE
     ON DELETE CASCADE;
+
+
+ALTER TABLE IF EXISTS public.videos
+    ADD CONSTRAINT fk_usuario FOREIGN KEY (documento_usuario)
+    REFERENCES public.usuario (documento) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE CASCADE;
+
+
+ALTER TABLE IF EXISTS public.videos
+    ADD CONSTRAINT fk_videos_deteccion FOREIGN KEY (id_deteccion)
+    REFERENCES public.deteccion (id_deteccion) MATCH SIMPLE
+    ON UPDATE CASCADE
+    ON DELETE SET NULL;
+
+
+ALTER TABLE IF EXISTS public.videos
+    ADD CONSTRAINT fk_videos_modalidad FOREIGN KEY (id_modalidad)
+    REFERENCES public.modalidad (id_modalidad) MATCH SIMPLE
+    ON UPDATE CASCADE
+    ON DELETE SET NULL;
 
 END;
