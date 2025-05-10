@@ -22,3 +22,6 @@ db.sqlite3
 # Configuración de entorno
 .env
 *.env
+
+static/uploads/*
+!static/uploads/.gitkeep
