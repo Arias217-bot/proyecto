@@ -5,6 +5,14 @@ from models.jugadores_rivales import JugadoresRivales
 from models.torneo import Torneo
 from flask import render_template, request, jsonify
 from config import db
+# Importar servicios para procesamiento automático
+from services.extractor_service import (
+    extract_text_from_image,
+    extract_text_from_pdf,
+    parse_text,
+    save_to_database
+)
+import os
 
 # Importar servicios para procesamiento automático
 from services.extractor_service import (
