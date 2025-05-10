@@ -25,3 +25,5 @@ db.sqlite3
 
 static/uploads/*
 !static/uploads/.gitkeep
+
+echo "*.mp4" >> .gitignore
