@@ -18,6 +18,7 @@ from .videos_routes import videos_bp
 from .deteccion_routes import deteccion_bp
 from .modalidad_routes import modalidad_bp
 
+
 # Definir los blueprints aquí para importarlos fácilmente
 blueprints = [usuario_bp, 
               equipo_bp, 
@@ -37,3 +38,4 @@ blueprints = [usuario_bp,
               videos_bp,
               deteccion_bp,
               modalidad_bp]
+              partido_bp]

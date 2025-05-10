@@ -1,88 +1,63 @@
 {% extends './base.html' %}
-{% block title %} Gestión de Equipos {% endblock %}
+{% block title %}Gestión de Equipos{% endblock %}
 
 {% block head %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 {% endblock %}
 
 {% block body %}
+<div class="container py-5">
+    <h2 class="text-center mb-5 fw-bold">Panel de Administración</h2>
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-4">
-        <h2 class="text-center">Listado</h2>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% set items = [
+            ('Categoría Edad', 'categoria_edad.categoria_edad_page', 'primary', 'bi-person-lines-fill'),
+            ('Categoría Sexo', 'categoria_sexo.categoria_sexo_page', 'secondary', 'bi-gender-ambiguous'),
+            ('Detalle Jugada', 'detalle_jugada.detalle_jugada_page', 'success', 'bi-clipboard2-data'),
+            ('Equipo Rival', 'equipo_rival.equipo_rival_page', 'warning', 'bi-people-fill'),
+            ('Jugadas', 'jugadas.jugadas_page', 'info', 'bi-lightning-fill'),
+            ('Jugadores Rivales', 'jugadores_rivales.jugadores_rivales_page', 'danger', 'bi-person-dash'),
+            ('Mensajes', 'mensajes.mensajes_page', 'dark', 'bi-chat-left-dots'),
+            ('Partidos', 'partido.partido_page', 'primary', 'bi-trophy'),
+            ('Posiciones', 'posicion.posicion_page', 'secondary', 'bi-list-ol'),
+            ('Roles', 'rol.rol_page', 'success', 'bi-person-badge'),
+            ('Torneos', 'torneo.torneo_page', 'warning', 'bi-flag')
+        ] %}
 
-        <!-- Botón para abrir el modal de creación -->
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearItemModal">
-            Crear nuevo
-        </button>    
+        <style>
+            /* Estilos personalizados para los botones */
+            .btn-primary { background-color: #0077b6; border-color: #0077b6; }
+            .btn-secondary { background-color: #00b4d8; border-color: #00b4d8; }
+            .btn-success { background-color: #90be6d; border-color: #90be6d; }
+            .btn-warning { background-color: #f9c74f; border-color: #f9c74f; }
+            .btn-info { background-color: #577590; border-color: #577590; }
+            .btn-danger { background-color: #f94144; border-color: #f94144; }
+            .btn-dark { background-color: #343a40; border-color: #343a40; }
 
-        <!-- Lista de ítems -->
-        <ul class="list-group my-4">
-            <!-- Ejemplo de ítem -->
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <a href="#">Nombre del ítem</a>
-                <span class="badge bg-primary">Descripción breve</span>
-            </li>
-            <!-- Puedes duplicar este bloque para más ítems -->
-        </ul> 
-    </div>
+            /* Estilos personalizados para los iconos */
+            .text-primary { color: #0077b6 !important; }
+            .text-secondary { color: #00b4d8 !important; }
+            .text-success { color: #90be6d !important; }
+            .text-warning { color: #f9c74f !important; }
+            .text-info { color: #577590 !important; }
+            .text-danger { color: #f94144 !important; }
+            .text-dark { color: #343a40 !important; }
+        </style>
 
-    <!-- Modal para crear un nuevo ítem -->
-    <div class="modal fade" id="crearItemModal" tabindex="-1" aria-labelledby="crearItemModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="crearItemModalLabel">Crear nuevo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="crearItemForm">
-                        <div class="mb-3">
-                            <label for="nombre" class="form-label">Nombre</label>
-                            <input type="text" class="form-control" id="nombre" name="nombre" required>
-                            <div class="text-danger mt-1" id="nombreError" style="display: none;">Este nombre ya está en uso.</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="categoria1" class="form-label">Categoría 1</label>
-                            <select class="form-select" id="categoria1" name="categoria1" required>
-                                <option value="1">Categoría A</option>
-                                <option value="2">Categoría B</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="categoria2" class="form-label">Categoría 2</label>
-                            <select class="form-select" id="categoria2" name="categoria2" required>
-                                <option value="1">Opción 1</option>
-                                <option value="2">Opción 2</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="descripcion" class="form-label">Descripción</label>
-                            <textarea class="form-control" id="descripcion" name="descripcion"></textarea>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Crear</button>
-                        </div>
-                    </form>
+        {% for name, endpoint, color, icon in items %}
+        <div class="col">
+            <div class="card h-100 shadow-sm rounded">
+                <div class="card-body text-center">
+                    <i class="bi {{ icon }} fs-1 text-{{ color }}"></i>
+                    <h5 class="card-title mt-3">{{ name }}</h5>
+                    <a href="{{ url_for(endpoint) }}" class="btn btn-{{ color }} mt-2 w-100">Ir</a>
                 </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-
-    <!-- Bootstrap JS (necesario para el modal) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
-
+</div>
 {% endblock %}

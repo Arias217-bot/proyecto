@@ -132,8 +132,9 @@
             <li>
                 {% if documento %}
                     <a href="{{ url_for('administrador.administrador_page', documento=documento) }}">Administrador</a>
+
                 {% else %}
-                    <a href="#">Administrador</a>
+                    <a href="#" class="text-muted">Administrador</a>
                 {% endif %}
             </li>
 

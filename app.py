@@ -64,6 +64,7 @@ app.register_blueprint(analisis_bp, url_prefix='/analisis')
 
 app.config['UPLOAD_FOLDER_ANALISIS'] = 'static/analisis_videos'
 
+
 # Configuración de JWT
 app.config['JWT_SECRET_KEY'] = 'tu_clave_secreta'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=5)
