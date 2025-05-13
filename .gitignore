@@ -8,10 +8,14 @@
 !README.md
 !.gitignore
 
+!integration.py
+!app.py
+
 # No ignorar las carpetas principales
 !detecciones/
 !evaluaciones/
 !fonts/
+!routes/
 !Salidas/
 !models/
 !utils/
